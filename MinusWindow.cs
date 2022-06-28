@@ -25,6 +25,7 @@ namespace StudioManette.minus
             Init();
         }
 
+
         public void OnGUI()
         {
             //GROUP 1 : PROPERTIES
@@ -100,12 +101,36 @@ namespace StudioManette.minus
             //try
             {
                 StreamReader reader = new StreamReader(currentMinusSettings.primaryProject.path + "/Packages/manifest.json");
-                string strManifest = reader.ReadToEnd();
-                Debug.Log("strManifest : " + strManifest);
-                Dictionary<string, string> packages =  JsonUtility.FromJson<JSONPackageManifest>(strManifest).dependencies;
-                foreach (KeyValuePair<string, string> package in packages)
+                //string strManifest = reader.ReadToEnd();
+                //Debug.Log("strManifest : " + strManifest);
+
+                string strLine;
+
+                Debug.Log("AAA"); 
+                while ((strLine = reader.ReadLine()) != null)
                 {
-                    Debug.Log("package name : " + package.Key +  " / version : " + package.Value);
+                    if (strLine.Contains("\"dependencies\": {")) break ;
+                }
+
+                List<PackageManifestItem> packageList = new List<PackageManifestItem>();
+
+                Debug.Log("BBB");
+                while ((strLine = reader.ReadLine()) != null)
+                {
+                    if (strLine.Contains("},")) break;
+                    else
+                    {
+                        Debug.Log("package line : " + strLine);
+                        var result = strLine.Split(":");
+                        packageList.Add(new PackageManifestItem(result[0], result[1]));
+                    }
+                }
+
+                Debug.Log("CCC");
+
+                foreach (PackageManifestItem pmi in packageList)
+                {
+                    Debug.Log("name : " + pmi.packageName + " / " + pmi.packageVersion );
                 }
             }
             /*
@@ -118,8 +143,15 @@ namespace StudioManette.minus
     }
 
     [System.Serializable]
-    public class JSONPackageManifest
+    public class PackageManifestItem
     {
-        public Dictionary<string, string> dependencies;
+        public string packageName;
+        public string packageVersion;
+
+        public PackageManifestItem(string _packageName, string _packageVersion)
+        {
+            this.packageName = _packageName;
+            this.packageVersion = _packageVersion;
+        }
     }
 }
