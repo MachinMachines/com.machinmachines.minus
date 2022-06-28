@@ -1,0 +1,16 @@
+{
+    "name": "StudioManette.Cortex",
+    "rootNamespace": "",
+    "references": [
+        "GUID:517bea256915c794f8caca2e8995124d"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
