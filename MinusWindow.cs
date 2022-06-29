@@ -142,7 +142,7 @@ namespace StudioManette.minus
 
                     if (isVersionValid)
                     {
-                        GUILayout.Space(WIDTH_CASE_PACKAGE);
+                        GUILayout.Label("Up to Date", GUILayout.Width(WIDTH_CASE_PACKAGE));
                     }
                     else
                     {
@@ -220,7 +220,19 @@ namespace StudioManette.minus
                     EditorGUILayout.LabelField(kvp.Value);
 
                     string checksumFromMinus = FindProjectSettingFileInMinus(kvp.Key);
-                    EditorGUILayout.LabelField(checksumFromMinus, kvp.Value.Equals(checksumFromMinus)? validStyle : wrongStyle);
+                    bool isChecksumValid = kvp.Value.Equals(checksumFromMinus);
+                    EditorGUILayout.LabelField(checksumFromMinus, isChecksumValid ? validStyle : wrongStyle);
+
+                    if (isChecksumValid)
+                    {
+                        GUILayout.Label("Up to Date", GUILayout.Width(WIDTH_CASE_PACKAGE));
+                    }
+                    else
+                    {
+                        if (GUILayout.Button("Update", GUILayout.Width(WIDTH_CASE_PACKAGE)))
+                        {
+                        }
+                    }
 
                     EditorGUILayout.EndHorizontal();
                 }
