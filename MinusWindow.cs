@@ -6,6 +6,7 @@ using UnityEditor.PackageManager.Requests;
 using UnityEditor.PackageManager;
 using System.IO;
 using System;
+using System.Text.RegularExpressions;
 
 namespace StudioManette.minus
 {
@@ -13,6 +14,12 @@ namespace StudioManette.minus
     {
         //visible properties
         public MinusSettingsObject currentMinusSettings;
+
+        private List<PackageManifestItem> cortexPackageList;
+        private List<PackageManifestItem> minusPackageList;
+
+        private Vector2 scrollPosPackages;
+        bool showPackages;
 
         [MenuItem("Studio Manette/Minus")]
         public static void ShowWindow()
@@ -37,15 +44,72 @@ namespace StudioManette.minus
             }
             EditorGUILayout.EndVertical();
 
-            if (GUILayout.Button("Synchronize Self"))
+            //GROUP 2 : BUTTONS
+            if (GUILayout.Button("Synchronize"))
             {
                 Synchronize();
-            }
-
-            if (GUILayout.Button("Read Cortex Manifest"))
-            {
                 ReadCortexManifest();
             }
+
+            //GROUP 3 : DISPLAY PROJECT SETTINGS INFO
+            EditorGUILayout.LabelField("PROJECT SETTINGS", EditorStyles.boldLabel);
+
+            //GROUP 4 : DISPLAY PACKAGES INFO
+            showPackages = EditorGUILayout.Foldout(showPackages, "PACKAGES", EditorStyles.foldoutHeader);
+            if (showPackages)
+            {
+                DisplayPackages();
+            }
+
+        }
+
+        private void DisplayPackages()
+        {
+            //Afficher les packages de cortex
+
+            GUIStyle validStyle = new GUIStyle(EditorStyles.label);
+            validStyle.normal.textColor = Color.green;
+            GUIStyle wrongStyle = new GUIStyle(EditorStyles.label);
+            wrongStyle.normal.textColor = Color.yellow;
+
+            scrollPosPackages = EditorGUILayout.BeginScrollView(scrollPosPackages);
+            foreach (PackageManifestItem package in cortexPackageList)
+            {
+                string packageVersionMinus = FindPackageVersionInMinus(package.packageName);
+                bool isVersionValid = packageVersionMinus.Equals(package.packageVersion);
+
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.LabelField(package.packageName);
+                EditorGUILayout.LabelField(package.packageVersion, GUILayout.Width(100));
+                EditorGUILayout.LabelField(packageVersionMinus, isVersionValid ? validStyle : wrongStyle, GUILayout.Width(100));
+
+                if (isVersionValid)
+                {
+                    GUILayout.Space(100);
+                }
+                else
+                {
+                    if (GUILayout.Button("Update", GUILayout.Width(100)))
+                    {
+                        //Synchronize();
+                    }
+                }
+
+                EditorGUILayout.EndHorizontal();
+            }
+            EditorGUILayout.EndScrollView();
+        }
+
+        string FindPackageVersionInMinus(string _packageName)
+        {
+            foreach (PackageManifestItem package in minusPackageList)
+            {
+                if (_packageName.Equals(package.packageName))
+                { 
+                    return package.packageVersion;
+                }
+            }
+            return "missing";
         }
 
         private void Init()
@@ -71,12 +135,15 @@ namespace StudioManette.minus
         private void Synchronize()
         {
             Debug.Log("Synchronize !! ");
+
+            minusPackageList = new List<PackageManifestItem>();
+
             request = Client.List();
             EditorApplication.update += ProgressListPackage;
         }
 
 
-        static void ProgressListPackage()
+        void ProgressListPackage()
         {
             if (request.IsCompleted)
             {
@@ -85,6 +152,7 @@ namespace StudioManette.minus
                     foreach (UnityEditor.PackageManager.PackageInfo pcInfo in request.Result)
                     {
                         Debug.Log("package info : " + pcInfo.name + " / version : " + pcInfo.version);
+                        minusPackageList.Add(new PackageManifestItem(pcInfo.name, pcInfo.version));
                     }
                 }
                 else if (request.Status >= StatusCode.Failure)
@@ -106,39 +174,46 @@ namespace StudioManette.minus
 
                 string strLine;
 
-                Debug.Log("AAA"); 
+                // Debug.Log("AAA"); 
+
                 while ((strLine = reader.ReadLine()) != null)
                 {
                     if (strLine.Contains("\"dependencies\": {")) break ;
                 }
 
-                List<PackageManifestItem> packageList = new List<PackageManifestItem>();
+                cortexPackageList = new List<PackageManifestItem>();
 
-                Debug.Log("BBB");
+                // Debug.Log("BBB");
+
                 while ((strLine = reader.ReadLine()) != null)
                 {
                     if (strLine.Contains("},")) break;
                     else
                     {
                         Debug.Log("package line : " + strLine);
-                        var result = strLine.Split(":");
-                        packageList.Add(new PackageManifestItem(result[0], result[1]));
+
+                        //regex : \"(.*)\"\: \"(.*)\"[\,]*
+                        Regex kPackageVersionRegex = new Regex("\"(.*)\"\\: \"(.*)\"[\\,]*", RegexOptions.Compiled | RegexOptions.Singleline);
+
+                        MatchCollection matches = kPackageVersionRegex.Matches(strLine);
+                        Debug.Log("matches count : " + matches.Count);
+                        if (matches.Count > 0)
+                        {
+                            string package = matches[0].Groups[1].Value;
+                            string version = matches[0].Groups[2].Value;
+
+                            cortexPackageList.Add(new PackageManifestItem(package, version));
+                        }
                     }
                 }
 
-                Debug.Log("CCC");
+                // Debug.Log("CCC");
 
-                foreach (PackageManifestItem pmi in packageList)
+                foreach (PackageManifestItem pmi in cortexPackageList)
                 {
-                    Debug.Log("name : " + pmi.packageName + " / " + pmi.packageVersion );
+                    Debug.Log("name : " + pmi.packageName + " / version : " + pmi.packageVersion );
                 }
             }
-            /*
-            catch (Exception e)
-            {
-                EditorUtility.DisplayDialog("error", "error : " + e.Message, "ok");
-            }
-            */
         }
     }
 
