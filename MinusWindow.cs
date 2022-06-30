@@ -102,9 +102,9 @@ namespace StudioManette.minus
             if (GUILayout.Button("Synchronize"))
             {
                 SynchronizeLocalPackages();
-                SynchronizePrimaryPackages();
-                SynchronizeLocalProjectSettings();
-                SynchronizePrimaryProjectSettings();
+                primaryPackageList = Synchronization.GetExternalPackagesList(currentMinusSettings.primaryProject.path + "/Packages");
+                primaryProjectSettingFiles = Synchronization.GetHashedFilesOfDirectory(PrimarySettingsDirectory);
+                thisProjectSettingFiles = Synchronization.GetHashedFilesOfDirectory(ThisSettingsDirectory);
             }
             
             if (isRunningAsyncOperation)
@@ -260,45 +260,6 @@ namespace StudioManette.minus
             }
         }
 
-        private void SynchronizePrimaryPackages()
-        {
-            //try
-            {
-                StreamReader reader = new StreamReader(currentMinusSettings.primaryProject.path + "/Packages/manifest.json");
-
-                string strLine;
-
-                while ((strLine = reader.ReadLine()) != null)
-                {
-                    if (strLine.Contains("\"dependencies\": {")) break;
-                }
-
-                primaryPackageList = new List<PackageManifestItem>();
-
-                while ((strLine = reader.ReadLine()) != null)
-                {
-                    if (strLine.Contains("},")) break;
-                    else
-                    {
-                        //Debug.Log("package line : " + strLine);
-
-                        //regex : \"(.*)\"\: \"(.*)\"[\,]*
-                        Regex kPackageVersionRegex = new Regex("\"(.*)\"\\: \"(.*)\"[\\,]*", RegexOptions.Compiled | RegexOptions.Singleline);
-
-                        MatchCollection matches = kPackageVersionRegex.Matches(strLine);
-                        //Debug.Log("matches count : " + matches.Count);
-                        if (matches.Count > 0)
-                        {
-                            string package = matches[0].Groups[1].Value;
-                            string version = matches[0].Groups[2].Value;
-
-                            primaryPackageList.Add(new PackageManifestItem(package, version));
-                        }
-                    }
-                }
-            }
-        }
-
         /**
          *  PROJECT SETTINGS MANAGEMENT
          */
@@ -322,7 +283,7 @@ namespace StudioManette.minus
                     EditorGUILayout.LabelField(kvp.Key, GUILayout.Width(WIDTH_CASE_PACKAGE*4));
                     //EditorGUILayout.LabelField(kvp.Value);
 
-                    string checksumFromThis = FindProjectSettingFileInThis(kvp.Key);
+                    string checksumFromThis = FindLocalProjectSettingFile(kvp.Key);
                     bool isChecksumValid = kvp.Value.Equals(checksumFromThis);
                     EditorGUILayout.LabelField(isChecksumValid ? "Up to date": "Outdated", isChecksumValid ? validStyle : wrongStyle, GUILayout.Width(WIDTH_CASE_PACKAGE));
 
@@ -348,7 +309,9 @@ namespace StudioManette.minus
             }
         }
 
-        private string FindProjectSettingFileInThis(string _fileName)
+        private string FindLocalProjectSettingFile
+            
+            (string _fileName)
         {
             foreach (KeyValuePair<string, string> kvp in thisProjectSettingFiles)
             {
@@ -362,7 +325,6 @@ namespace StudioManette.minus
 
         private void UpdateSettingFile(string filename)
         {
-            //GAB
             if (EditorUtility.DisplayDialog("Warning", "Do you really want to update the file " + filename + " ? ", "Yes", "No"))
             {
                 FileUtil.ReplaceFile(PrimarySettingsDirectory+ "/" + filename, ThisSettingsDirectory + "/" + filename);
@@ -372,51 +334,6 @@ namespace StudioManette.minus
                     EditorApplication.OpenProject(Directory.GetCurrentDirectory());
                 }
             }
-        }
-
-        private void SynchronizePrimaryProjectSettings()
-        {
-            primaryProjectSettingFiles = SynchronizeProjectSettings( PrimarySettingsDirectory );
-        }
-
-        private void SynchronizeLocalProjectSettings()
-        {
-            thisProjectSettingFiles = SynchronizeProjectSettings( ThisSettingsDirectory );
-        }
-
-        private Dictionary<string, string> SynchronizeProjectSettings(string projectSettingsDirectory)
-        {
-            Dictionary<string, string>  tmpDict = new Dictionary<string, string>();
-
-            DirectoryInfo info = new DirectoryInfo(projectSettingsDirectory);
-            FileInfo[] fileInfo = info.GetFiles();
-            foreach (FileInfo file in fileInfo)
-            {
-                string hashStr = "none";
-                MD5 md5 = MD5.Create();
-
-                using (var stream = File.OpenRead(file.FullName))
-                {
-                   var hash = md5.ComputeHash(stream);
-                   hashStr = BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
-                }
-                tmpDict.Add(file.Name, hashStr);
-            }
-            return tmpDict;
-        }
-
-    }
-
-    [System.Serializable]
-    public class PackageManifestItem
-    {
-        public string packageName;
-        public string packageVersion;
-
-        public PackageManifestItem(string _packageName, string _packageVersion)
-        {
-            this.packageName = _packageName;
-            this.packageVersion = _packageVersion;
         }
     }
 }
