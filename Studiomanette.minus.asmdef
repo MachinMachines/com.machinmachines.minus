@@ -1,6 +1,6 @@
 {
-    "name": "StudioManette.Cortex",
-    "rootNamespace": "",
+    "name": "StudioManette.Minus",
+    "rootNamespace": "StudioManette.minus",
     "references": [
         "GUID:517bea256915c794f8caca2e8995124d"
     ],
