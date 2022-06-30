@@ -49,6 +49,16 @@ namespace StudioManette.minus
             Init();
         }
 
+        public string PrimarySettingsDirectory
+        {
+            get { return currentMinusSettings.primaryProject.path + "/ProjectSettings"; }
+        }
+
+        public string ThisSettingsDirectory
+        {
+            get { return Directory.GetCurrentDirectory() + "/ProjectSettings"; }
+        }
+
 
         public void OnGUI()
         {
@@ -69,24 +79,6 @@ namespace StudioManette.minus
                 SynchronizeLocalProjectSettings();
                 SynchronizeCortexProjectSettings();
             }
-
-            /*
-            Texture2D tex2 = new Texture2D(2,2);
-
-            Color fillColor = new Color(0.1f, 0.1f, 0.1f) ;
-            var fillColorArray = tex2.GetPixels();
-
-            for (var i = 0; i < fillColorArray.Length; ++i)
-            {
-                fillColorArray[i] = fillColor;
-            }
-            tex2.SetPixels(fillColorArray);
-            tex2.Apply();
-
-            GUIStyle foldOutStyle = new GUIStyle(EditorStyles.foldoutHeader);
-            foldOutStyle.normal.background = tex2;
-            */
-
             
             if (isRunningAsyncOperation)
             {
@@ -118,17 +110,17 @@ namespace StudioManette.minus
 
         private void DisplayPackages()
         {
-            //Display Headers
-            EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField("Package name", EditorStyles.boldLabel, GUILayout.Width(WIDTH_CASE_PACKAGE*3));
-            EditorGUILayout.LabelField("Primary", EditorStyles.boldLabel, GUILayout.Width(WIDTH_CASE_PACKAGE));
-            EditorGUILayout.LabelField("This", EditorStyles.boldLabel, GUILayout.Width(WIDTH_CASE_PACKAGE));
-            EditorGUILayout.LabelField("", GUILayout.Width(WIDTH_CASE_PACKAGE));
-            EditorGUILayout.EndHorizontal();
-
             //Display Each Package
-            if (cortexPackageList.Count > 0)
+            if (cortexPackageList !=null && cortexPackageList.Count > 0)
             {
+                //Display Headers
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.LabelField("Package name", EditorStyles.boldLabel, GUILayout.Width ( WIDTH_CASE_PACKAGE * 3));
+                EditorGUILayout.LabelField("Primary", EditorStyles.boldLabel, GUILayout.Width ( WIDTH_CASE_PACKAGE ));
+                EditorGUILayout.LabelField("This", EditorStyles.boldLabel, GUILayout.Width ( WIDTH_CASE_PACKAGE ));
+                EditorGUILayout.LabelField("Update", EditorStyles.boldLabel, GUILayout.Width ( WIDTH_CASE_PACKAGE ));
+                EditorGUILayout.EndHorizontal();
+
                 scrollPosPackages = EditorGUILayout.BeginScrollView(scrollPosPackages);
                 foreach (PackageManifestItem package in cortexPackageList)
                 {
@@ -136,13 +128,13 @@ namespace StudioManette.minus
                     bool isVersionValid = packageVersionMinus.Equals(package.packageVersion);
 
                     EditorGUILayout.BeginHorizontal();
-                    EditorGUILayout.LabelField(package.packageName, GUILayout.Width(WIDTH_CASE_PACKAGE * 3));
-                    EditorGUILayout.LabelField(package.packageVersion, GUILayout.Width(WIDTH_CASE_PACKAGE));
-                    EditorGUILayout.LabelField(packageVersionMinus, isVersionValid ? validStyle : wrongStyle, GUILayout.Width(WIDTH_CASE_PACKAGE));
+                    EditorGUILayout.LabelField(package.packageName, GUILayout.Width ( WIDTH_CASE_PACKAGE * 3 ));
+                    EditorGUILayout.LabelField(package.packageVersion, GUILayout.Width ( WIDTH_CASE_PACKAGE ));
+                    EditorGUILayout.LabelField(packageVersionMinus, isVersionValid ? validStyle : wrongStyle, GUILayout.Width( WIDTH_CASE_PACKAGE ));
 
                     if (isVersionValid)
                     {
-                        GUILayout.Label("Up to Date", GUILayout.Width(WIDTH_CASE_PACKAGE));
+                        GUILayout.Label("Up to Date", GUILayout.Width( WIDTH_CASE_PACKAGE ));
                     }
                     else
                     {
@@ -151,7 +143,6 @@ namespace StudioManette.minus
                             UpdatePackage(package.packageName, package.packageVersion);
                         }
                     }
-
                     EditorGUILayout.EndHorizontal();
                 }
                 EditorGUILayout.EndScrollView();
@@ -212,16 +203,24 @@ namespace StudioManette.minus
         {
             if (cortexProjectSettingFiles !=null && cortexProjectSettingFiles.Count > 0)
             {
+                //Display Headers
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.LabelField("File name", EditorStyles.boldLabel, GUILayout.Width(WIDTH_CASE_PACKAGE * 3));
+                EditorGUILayout.LabelField("", EditorStyles.boldLabel, GUILayout.Width(WIDTH_CASE_PACKAGE));
+                EditorGUILayout.LabelField("", EditorStyles.boldLabel, GUILayout.Width(WIDTH_CASE_PACKAGE));
+                EditorGUILayout.LabelField("Update", EditorStyles.boldLabel, GUILayout.Width(WIDTH_CASE_PACKAGE));
+                EditorGUILayout.EndHorizontal();
+
                 scrollPosProjectSettings = EditorGUILayout.BeginScrollView(scrollPosProjectSettings);
                 foreach (KeyValuePair<string, string> kvp in cortexProjectSettingFiles)
                 {
                     EditorGUILayout.BeginHorizontal();
-                    EditorGUILayout.LabelField(kvp.Key);
-                    EditorGUILayout.LabelField(kvp.Value);
+                    EditorGUILayout.LabelField(kvp.Key, GUILayout.Width(WIDTH_CASE_PACKAGE*5));
+                    //EditorGUILayout.LabelField(kvp.Value);
 
                     string checksumFromMinus = FindProjectSettingFileInMinus(kvp.Key);
                     bool isChecksumValid = kvp.Value.Equals(checksumFromMinus);
-                    EditorGUILayout.LabelField(checksumFromMinus, isChecksumValid ? validStyle : wrongStyle);
+                    //EditorGUILayout.LabelField(checksumFromMinus, isChecksumValid ? validStyle : wrongStyle);
 
                     if (isChecksumValid)
                     {
@@ -229,8 +228,9 @@ namespace StudioManette.minus
                     }
                     else
                     {
-                        if (GUILayout.Button("Update", GUILayout.Width(WIDTH_CASE_PACKAGE)))
+                        if (GUILayout.Button("Update" , GUILayout.Width(WIDTH_CASE_PACKAGE)))
                         {
+                            UpdateSettingFile(kvp.Key);
                         }
                     }
 
@@ -254,6 +254,20 @@ namespace StudioManette.minus
                 }
             }
             return "None";
+        }
+
+        private void UpdateSettingFile(string filename)
+        {
+            //GAB
+            if (EditorUtility.DisplayDialog("Warning", "Do you really want to update the file " + filename + " ? ", "Yes", "No"))
+            {
+                FileUtil.ReplaceFile(PrimarySettingsDirectory+ "/" + filename, ThisSettingsDirectory + "/" + filename);
+
+                if (EditorUtility.DisplayDialog("info", "File copied. You need to restart the Unity Project to apply changes.", "Restart Editor", "Not yet"))
+                {
+                    EditorApplication.OpenProject(Directory.GetCurrentDirectory());
+                }
+            }
         }
 
         private void Init()
@@ -281,12 +295,12 @@ namespace StudioManette.minus
 
         private void SynchronizeCortexProjectSettings()
         {
-            cortexProjectSettingFiles = SynchronizeProjectSettings(currentMinusSettings.primaryProject.path + "/ProjectSettings");
+            cortexProjectSettingFiles = SynchronizeProjectSettings( PrimarySettingsDirectory );
         }
 
         private void SynchronizeLocalProjectSettings()
         {
-            minusProjectSettingFiles = SynchronizeProjectSettings(Directory.GetCurrentDirectory() + "/ProjectSettings");
+            minusProjectSettingFiles = SynchronizeProjectSettings( ThisSettingsDirectory );
         }
 
         private Dictionary<string, string> SynchronizeProjectSettings(string projectSettingsDirectory)
