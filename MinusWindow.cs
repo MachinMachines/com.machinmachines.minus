@@ -18,11 +18,11 @@ namespace StudioManette.minus
         /* visible properties */
         public MinusSettingsObject currentMinusSettings;
 
-        private List<PackageManifestItem> cortexPackageList;
-        private List<PackageManifestItem> minusPackageList;
+        private List<PackageManifestItem> primaryPackageList;
+        private List<PackageManifestItem> thisPackageList;
 
-        private Dictionary<string, string> cortexProjectSettingFiles;
-        private Dictionary<string, string> minusProjectSettingFiles;
+        private Dictionary<string, string> primaryProjectSettingFiles;
+        private Dictionary<string, string> thisProjectSettingFiles;
 
 
         /* ui properties */
@@ -38,6 +38,21 @@ namespace StudioManette.minus
         private AddRequest _addRequest;
         private bool isRunningAsyncOperation = false;
 
+        /* Getters */ 
+        public string PrimarySettingsDirectory
+        {
+            get { return currentMinusSettings.primaryProject.path + "/ProjectSettings"; }
+        }
+
+        public string ThisSettingsDirectory
+        {
+            get { return Directory.GetCurrentDirectory() + "/ProjectSettings"; }
+        }
+
+        /*
+         * INITIALIZATION
+         */
+
         [MenuItem("Studio Manette/Minus")]
         public static void ShowWindow()
         {
@@ -49,16 +64,28 @@ namespace StudioManette.minus
             Init();
         }
 
-        public string PrimarySettingsDirectory
+        private void Init()
         {
-            get { return currentMinusSettings.primaryProject.path + "/ProjectSettings"; }
-        }
+            //styles
+            validStyle = new GUIStyle(EditorStyles.label);
+            validStyle.normal.textColor = Color.green;
+            wrongStyle = new GUIStyle(EditorStyles.label);
+            wrongStyle.normal.textColor = Color.yellow;
 
-        public string ThisSettingsDirectory
-        {
-            get { return Directory.GetCurrentDirectory() + "/ProjectSettings"; }
+            List<MinusSettingsObject> settingsList = Utils.EditorAssets.FindAssetsByType<MinusSettingsObject>();
+            if (settingsList.Count == 0)
+            {
+                Debug.LogError("There is no MinusSettingsObject in the project, please create one (Create/StudioManette/MinusSettings Asset).");
+            }
+            else if (settingsList.Count > 1)
+            {
+                Debug.LogError("There is more than one MinusSettingsObject, you should have only one. Please remove the extra ones.");
+            }
+            else
+            {
+                currentMinusSettings = settingsList[0];
+            }
         }
-
 
         public void OnGUI()
         {
@@ -75,9 +102,9 @@ namespace StudioManette.minus
             if (GUILayout.Button("Synchronize"))
             {
                 SynchronizeLocalPackages();
-                SynchronizeCortexPackages();
+                SynchronizePrimaryPackages();
                 SynchronizeLocalProjectSettings();
-                SynchronizeCortexProjectSettings();
+                SynchronizePrimaryProjectSettings();
             }
             
             if (isRunningAsyncOperation)
@@ -108,10 +135,14 @@ namespace StudioManette.minus
             }
         }
 
+        /**
+         *  PACKAGE MANAGEMENT
+         */
+
         private void DisplayPackages()
         {
             //Display Each Package
-            if (cortexPackageList !=null && cortexPackageList.Count > 0)
+            if (primaryPackageList !=null && primaryPackageList.Count > 0 && thisPackageList != null && thisPackageList.Count > 0)
             {
                 //Display Headers
                 EditorGUILayout.BeginHorizontal();
@@ -122,19 +153,19 @@ namespace StudioManette.minus
                 EditorGUILayout.EndHorizontal();
 
                 scrollPosPackages = EditorGUILayout.BeginScrollView(scrollPosPackages);
-                foreach (PackageManifestItem package in cortexPackageList)
+                foreach (PackageManifestItem package in primaryPackageList)
                 {
-                    string packageVersionMinus = FindPackageVersionInMinus(package.packageName);
-                    bool isVersionValid = packageVersionMinus.Equals(package.packageVersion);
+                    string localPackageVersion = FindPackageVersionInThis(package.packageName);
+                    bool isVersionValid = localPackageVersion.Equals(package.packageVersion);
 
                     EditorGUILayout.BeginHorizontal();
                     EditorGUILayout.LabelField(package.packageName, GUILayout.Width ( WIDTH_CASE_PACKAGE * 3 ));
                     EditorGUILayout.LabelField(package.packageVersion, GUILayout.Width ( WIDTH_CASE_PACKAGE ));
-                    EditorGUILayout.LabelField(packageVersionMinus, isVersionValid ? validStyle : wrongStyle, GUILayout.Width( WIDTH_CASE_PACKAGE ));
+                    EditorGUILayout.LabelField(localPackageVersion, isVersionValid ? validStyle : wrongStyle, GUILayout.Width( WIDTH_CASE_PACKAGE ));
 
                     if (isVersionValid)
                     {
-                        GUILayout.Label("Up to Date", GUILayout.Width( WIDTH_CASE_PACKAGE ));
+                        GUILayout.Label("------", GUILayout.Width( WIDTH_CASE_PACKAGE ));
                     }
                     else
                     {
@@ -164,7 +195,7 @@ namespace StudioManette.minus
             }
         }
 
-        void ProgressAddPackage()
+        private void ProgressAddPackage()
         {
             isRunningAsyncOperation = true;
             if (_addRequest.IsCompleted)
@@ -180,16 +211,16 @@ namespace StudioManette.minus
                 }
                 else if (_addRequest.Status >= StatusCode.Failure)
                 {
-                    Debug.Log(_listRequest.Error.message);
+                    Debug.Log(_addRequest.Error.message);
                 }
                 isRunningAsyncOperation = false;
                 EditorApplication.update -= ProgressAddPackage;
             }
         }
 
-        private string FindPackageVersionInMinus(string _packageName)
+        private string FindPackageVersionInThis(string _packageName)
         {
-            foreach (PackageManifestItem package in minusPackageList)
+            foreach (PackageManifestItem package in thisPackageList)
             {
                 if (_packageName.Equals(package.packageName))
                 { 
@@ -199,9 +230,82 @@ namespace StudioManette.minus
             return "missing";
         }
 
+        private void SynchronizeLocalPackages()
+        {
+            thisPackageList = new List<PackageManifestItem>();
+
+            _listRequest = Client.List();
+            EditorApplication.update += ProgressListPackage;
+        }
+
+        private void ProgressListPackage()
+        {
+            isRunningAsyncOperation = true;
+            if (_listRequest.IsCompleted)
+            {
+                if (_listRequest.Status == StatusCode.Success)
+                {
+                    foreach (UnityEditor.PackageManager.PackageInfo pcInfo in _listRequest.Result)
+                    {
+                        //Debug.Log("package info : " + pcInfo.name + " / version : " + pcInfo.version);
+                        thisPackageList.Add(new PackageManifestItem(pcInfo.name, pcInfo.version));
+                    }
+                }
+                else if (_listRequest.Status >= StatusCode.Failure)
+                {
+                    Debug.Log(_listRequest.Error.message);
+                }
+                isRunningAsyncOperation = false;
+                EditorApplication.update -= ProgressListPackage;
+            }
+        }
+
+        private void SynchronizePrimaryPackages()
+        {
+            //try
+            {
+                StreamReader reader = new StreamReader(currentMinusSettings.primaryProject.path + "/Packages/manifest.json");
+
+                string strLine;
+
+                while ((strLine = reader.ReadLine()) != null)
+                {
+                    if (strLine.Contains("\"dependencies\": {")) break;
+                }
+
+                primaryPackageList = new List<PackageManifestItem>();
+
+                while ((strLine = reader.ReadLine()) != null)
+                {
+                    if (strLine.Contains("},")) break;
+                    else
+                    {
+                        //Debug.Log("package line : " + strLine);
+
+                        //regex : \"(.*)\"\: \"(.*)\"[\,]*
+                        Regex kPackageVersionRegex = new Regex("\"(.*)\"\\: \"(.*)\"[\\,]*", RegexOptions.Compiled | RegexOptions.Singleline);
+
+                        MatchCollection matches = kPackageVersionRegex.Matches(strLine);
+                        //Debug.Log("matches count : " + matches.Count);
+                        if (matches.Count > 0)
+                        {
+                            string package = matches[0].Groups[1].Value;
+                            string version = matches[0].Groups[2].Value;
+
+                            primaryPackageList.Add(new PackageManifestItem(package, version));
+                        }
+                    }
+                }
+            }
+        }
+
+        /**
+         *  PROJECT SETTINGS MANAGEMENT
+         */
+
         private void DisplayProjectSettings()
         {
-            if (cortexProjectSettingFiles !=null && cortexProjectSettingFiles.Count > 0)
+            if (primaryProjectSettingFiles !=null && primaryProjectSettingFiles.Count > 0)
             {
                 //Display Headers
                 EditorGUILayout.BeginHorizontal();
@@ -212,19 +316,19 @@ namespace StudioManette.minus
                 EditorGUILayout.EndHorizontal();
 
                 scrollPosProjectSettings = EditorGUILayout.BeginScrollView(scrollPosProjectSettings);
-                foreach (KeyValuePair<string, string> kvp in cortexProjectSettingFiles)
+                foreach (KeyValuePair<string, string> kvp in primaryProjectSettingFiles)
                 {
                     EditorGUILayout.BeginHorizontal();
-                    EditorGUILayout.LabelField(kvp.Key, GUILayout.Width(WIDTH_CASE_PACKAGE*5));
+                    EditorGUILayout.LabelField(kvp.Key, GUILayout.Width(WIDTH_CASE_PACKAGE*4));
                     //EditorGUILayout.LabelField(kvp.Value);
 
-                    string checksumFromMinus = FindProjectSettingFileInMinus(kvp.Key);
-                    bool isChecksumValid = kvp.Value.Equals(checksumFromMinus);
-                    //EditorGUILayout.LabelField(checksumFromMinus, isChecksumValid ? validStyle : wrongStyle);
+                    string checksumFromThis = FindProjectSettingFileInThis(kvp.Key);
+                    bool isChecksumValid = kvp.Value.Equals(checksumFromThis);
+                    EditorGUILayout.LabelField(isChecksumValid ? "Up to date": "Outdated", isChecksumValid ? validStyle : wrongStyle, GUILayout.Width(WIDTH_CASE_PACKAGE));
 
                     if (isChecksumValid)
                     {
-                        GUILayout.Label("Up to Date", GUILayout.Width(WIDTH_CASE_PACKAGE));
+                        GUILayout.Label("------", GUILayout.Width(WIDTH_CASE_PACKAGE));
                     }
                     else
                     {
@@ -244,9 +348,9 @@ namespace StudioManette.minus
             }
         }
 
-        private string FindProjectSettingFileInMinus(string _fileName)
+        private string FindProjectSettingFileInThis(string _fileName)
         {
-            foreach (KeyValuePair<string, string> kvp in minusProjectSettingFiles)
+            foreach (KeyValuePair<string, string> kvp in thisProjectSettingFiles)
             {
                 if (_fileName.Equals(kvp.Key))
                 {
@@ -270,37 +374,14 @@ namespace StudioManette.minus
             }
         }
 
-        private void Init()
+        private void SynchronizePrimaryProjectSettings()
         {
-            //styles
-            validStyle = new GUIStyle(EditorStyles.label);
-            validStyle.normal.textColor = Color.green;
-            wrongStyle = new GUIStyle(EditorStyles.label);
-            wrongStyle.normal.textColor = Color.yellow;
-
-            List<MinusSettingsObject> settingsList = Utils.EditorAssets.FindAssetsByType<MinusSettingsObject>();
-            if (settingsList.Count == 0)
-            {
-                Debug.LogError("There is no MinusSettingsObject in the project, please create one (Create/StudioManette/MinusSettings Asset).");
-            }
-            else if (settingsList.Count > 1)
-            {
-                Debug.LogError("There is more than one MinusSettingsObject, you should have only one. Please remove the extra ones.");
-            }
-            else
-            {
-                currentMinusSettings = settingsList[0];
-            }
-        }
-
-        private void SynchronizeCortexProjectSettings()
-        {
-            cortexProjectSettingFiles = SynchronizeProjectSettings( PrimarySettingsDirectory );
+            primaryProjectSettingFiles = SynchronizeProjectSettings( PrimarySettingsDirectory );
         }
 
         private void SynchronizeLocalProjectSettings()
         {
-            minusProjectSettingFiles = SynchronizeProjectSettings( ThisSettingsDirectory );
+            thisProjectSettingFiles = SynchronizeProjectSettings( ThisSettingsDirectory );
         }
 
         private Dictionary<string, string> SynchronizeProjectSettings(string projectSettingsDirectory)
@@ -324,74 +405,6 @@ namespace StudioManette.minus
             return tmpDict;
         }
 
-        private void SynchronizeLocalPackages()
-        {
-            minusPackageList = new List<PackageManifestItem>();
-
-            _listRequest = Client.List();
-            EditorApplication.update += ProgressListPackage;
-        }
-
-        void ProgressListPackage()
-        {
-            isRunningAsyncOperation = true;
-            if (_listRequest.IsCompleted)
-            {
-                if (_listRequest.Status == StatusCode.Success)
-                {
-                    foreach (UnityEditor.PackageManager.PackageInfo pcInfo in _listRequest.Result)
-                    {
-                        Debug.Log("package info : " + pcInfo.name + " / version : " + pcInfo.version);
-                        minusPackageList.Add(new PackageManifestItem(pcInfo.name, pcInfo.version));
-                    }
-                }
-                else if (_listRequest.Status >= StatusCode.Failure)
-                {
-                    Debug.Log(_listRequest.Error.message);
-                }
-                isRunningAsyncOperation = false;
-                EditorApplication.update -= ProgressListPackage;
-            }
-        }
-
-        void SynchronizeCortexPackages()
-        {
-            //try
-            {
-                StreamReader reader = new StreamReader(currentMinusSettings.primaryProject.path + "/Packages/manifest.json");
-
-                string strLine;
-
-                while ((strLine = reader.ReadLine()) != null)
-                {
-                    if (strLine.Contains("\"dependencies\": {")) break ;
-                }
-
-                cortexPackageList = new List<PackageManifestItem>();
-
-                while ((strLine = reader.ReadLine()) != null)
-                {
-                    if (strLine.Contains("},")) break;
-                    else
-                    {
-                        Debug.Log("package line : " + strLine);
-
-                        //regex : \"(.*)\"\: \"(.*)\"[\,]*
-                        Regex kPackageVersionRegex = new Regex("\"(.*)\"\\: \"(.*)\"[\\,]*", RegexOptions.Compiled | RegexOptions.Singleline);
-
-                        MatchCollection matches = kPackageVersionRegex.Matches(strLine);
-                        Debug.Log("matches count : " + matches.Count);
-                        if (matches.Count > 0)
-                        {
-                            string package = matches[0].Groups[1].Value;
-                            string version = matches[0].Groups[2].Value;
-
-                            cortexPackageList.Add(new PackageManifestItem(package, version));
-                        }
-                    }
-                }
-            }
-        }
     }
 
     [System.Serializable]
