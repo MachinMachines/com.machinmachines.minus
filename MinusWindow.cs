@@ -1,13 +1,15 @@
-
-using System.Collections.Generic;
-using UnityEditor;
-using UnityEngine;
-using UnityEditor.PackageManager.Requests;
-using UnityEditor.PackageManager;
-using System.IO;
 using System;
-using System.Text.RegularExpressions;
+using System.Collections.Generic;
+using System.IO;
 using System.Security.Cryptography;
+using System.Text.RegularExpressions;
+
+using UnityEditor;
+using UnityEditor.PackageManager;
+using UnityEditor.PackageManager.Requests;
+using UnityEngine;
+
+using StudioManette.Utils;
 
 namespace StudioManette.minus
 {
@@ -72,7 +74,7 @@ namespace StudioManette.minus
             wrongStyle = new GUIStyle(EditorStyles.label);
             wrongStyle.normal.textColor = Color.yellow;
 
-            List<MinusSettingsObject> settingsList = Utils.EditorAssets.FindAssetsByType<MinusSettingsObject>();
+            List<MinusSettingsObject> settingsList = Utils.AssetDatabaseExtensions.FindAssetsByType<MinusSettingsObject>();
             if (settingsList.Count == 0)
             {
                 Debug.LogError("There is no MinusSettingsObject in the project, please create one (Create/StudioManette/MinusSettings Asset).");
