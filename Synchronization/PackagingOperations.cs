@@ -8,25 +8,45 @@ using UnityEngine.Events;
 
 namespace StudioManette.minus
 {
-    public static class PackagingOperations 
+    public static class PackagingOperations
     {
+        /*
+         *  public variables
+         */
         public static bool isRunningAsyncOperation = false;
 
-        private static List<PackageManifestItem> tmpPackageList;
-        private static ListRequest _listRequest;
-        private static UnityEvent OnQuitList;
+        /*
+         *  private Common variables
+         */
+        public delegate void ResponseString ( string response );
 
+        /*
+         *  private variables for SynchronizeLocalPackages method
+         */
+        private static ListRequest _listRequest;
+        public delegate void ResponsePackageList(List<PackageManifestItem> response);
+        private static ResponsePackageList delegateResponsePackageList;
+
+        /*
+         *  private variables for UpdatePackage method
+         */
         private static AddRequest _addRequest;
 
+        /*
+         *  private variables for GetVersionInDependencies method
+         */
+        private static ListRequest _listDependenciesRequest;
+        private static string _packageName;
+        private static string _dependencyName;
+        private static ResponseString delegateResponseDependenciesRequest;
 
-        public static void SynchronizeLocalPackages(out List<PackageManifestItem> packageList)
+        //public static void SynchronizeLocalPackages(out List<PackageManifestItem> packageList)
+        public static void SynchronizeLocalPackages(ResponsePackageList delegateResponse)
         {
-            tmpPackageList = new List<PackageManifestItem>();
 
             _listRequest = Client.List();
             EditorApplication.update += ProgressListPackage;
-            OnQuitList = new UnityEvent();
-            OnQuitList.AddListener(ReturnPackageList(out packageList));
+            delegateResponsePackageList = delegateResponse;
         }
 
         private static void ProgressListPackage()
@@ -34,6 +54,7 @@ namespace StudioManette.minus
             isRunningAsyncOperation = true;
             if (_listRequest.IsCompleted)
             {
+                List<PackageManifestItem> tmpPackageList = new List<PackageManifestItem>();
                 if (_listRequest.Status == StatusCode.Success)
                 {
                     foreach (UnityEditor.PackageManager.PackageInfo pcInfo in _listRequest.Result)
@@ -48,14 +69,12 @@ namespace StudioManette.minus
                 }
                 isRunningAsyncOperation = false;
                 EditorApplication.update -= ProgressListPackage;
-                OnQuitList.Invoke();
-            }
-        }
 
-        private static UnityAction ReturnPackageList(out List<PackageManifestItem> packageList)
-        {
-            packageList = tmpPackageList;
-            return null;
+                delegateResponsePackageList(tmpPackageList);
+
+                //clean variables
+                _listRequest = null;
+            }
         }
 
         public static void UpdatePackage(string packageName, string newVersion)
@@ -86,6 +105,61 @@ namespace StudioManette.minus
                 }
                 isRunningAsyncOperation = false;
                 EditorApplication.update -= ProgressAddPackage;
+
+                //clean variables
+                _addRequest = null;
+            }
+        }
+
+        public static void GetVersionInDependencies(string packageName, string dependencyName, ResponseString delegateResponse)
+        {
+            _packageName = packageName;
+            _dependencyName = dependencyName;
+
+            _listDependenciesRequest = Client.List();
+            EditorApplication.update += ProgressDepedencies;
+
+            delegateResponseDependenciesRequest = delegateResponse;
+        }
+
+        private static void ProgressDepedencies()
+        {
+            isRunningAsyncOperation = true;
+            if (_listDependenciesRequest.IsCompleted)
+            {
+                string dependencyVersion = null;
+
+                if (_listDependenciesRequest.Status == StatusCode.Success)
+                {
+                    foreach (UnityEditor.PackageManager.PackageInfo pcInfo in _listDependenciesRequest.Result)
+                    {
+                        if (string.Equals(pcInfo.name, _packageName))
+                        {
+                            foreach (DependencyInfo di in pcInfo.dependencies)
+                            {
+                                if (di.name == _dependencyName)
+                                {
+                                    dependencyVersion = di.version;
+                                    break;
+                                }
+                            }
+                            break;
+                        }
+                    }
+                }
+                else if (_listDependenciesRequest.Status >= StatusCode.Failure)
+                {
+                    Debug.Log(_listDependenciesRequest.Error.message);
+                }
+                isRunningAsyncOperation = false;
+                EditorApplication.update -= ProgressDepedencies;
+
+                delegateResponseDependenciesRequest(dependencyVersion);
+
+                //clean variables
+                _listDependenciesRequest = null;
+                _packageName = null;
+                _dependencyName = null;
             }
         }
     }

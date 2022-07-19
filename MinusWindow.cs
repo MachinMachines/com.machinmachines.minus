@@ -1,15 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Security.Cryptography;
-using System.Text.RegularExpressions;
 
 using UnityEditor;
-using UnityEditor.PackageManager;
-using UnityEditor.PackageManager.Requests;
 using UnityEngine;
-
-using StudioManette.Utils;
 
 namespace StudioManette.minus
 {
@@ -34,11 +28,6 @@ namespace StudioManette.minus
         private Vector2 scrollPosPackages;
         private bool showProjectSettings;
         private Vector2 scrollPosProjectSettings;
-
-        /* properties for async operations */
-        private ListRequest _listRequest;
-        private AddRequest _addRequest;
-        private bool isRunningAsyncOperation = false;
 
         /* Getters */ 
         public string PrimarySettingsDirectory
@@ -109,7 +98,7 @@ namespace StudioManette.minus
                 thisProjectSettingFiles = Synchronization.GetHashedFilesOfDirectory(ThisSettingsDirectory);
             }
             
-            if (isRunningAsyncOperation)
+            if (PackagingOperations.isRunningAsyncOperation)
             {
                 EditorGUILayout.LabelField("Waiting for synchronization...");
             }
@@ -191,39 +180,8 @@ namespace StudioManette.minus
             if (EditorUtility.DisplayDialog("Warning", "Do you really want to update the package " + packageName + "to version " + newVersion + " ? ", "Yes", "No"))
             {
                 PackagingOperations.UpdatePackage(packageName, newVersion);
-                /*
-                // - To install a specific version of a package, use a package identifier ("name@version"). This is the only way to install a pre-release version.
-                string identifier = packageName + "@" + newVersion;
-                _addRequest = Client.Add(identifier);
-                EditorApplication.update += ProgressAddPackage;
-                */
             }
         }
-
-        /*
-        private void ProgressAddPackage()
-        {
-            isRunningAsyncOperation = true;
-            if (_addRequest.IsCompleted)
-            {
-                if (_addRequest.Status == StatusCode.Success)
-                {
-                    UnityEditor.PackageManager.PackageInfo pcInfo = _addRequest.Result;
-                    {
-                        Debug.Log("package well installed.");
-                        Debug.Log("package info : " + pcInfo.name + " / version : " + pcInfo.version);
-                        //minusPackageList.Add(new PackageManifestItem(pcInfo.name, pcInfo.version));
-                    }
-                }
-                else if (_addRequest.Status >= StatusCode.Failure)
-                {
-                    Debug.Log(_addRequest.Error.message);
-                }
-                isRunningAsyncOperation = false;
-                EditorApplication.update -= ProgressAddPackage;
-            }
-        }
-        */
 
         private string FindPackageVersionInThis(string _packageName)
         {
@@ -239,38 +197,13 @@ namespace StudioManette.minus
 
         private void SynchronizeLocalPackages()
         {
-            PackagingOperations.SynchronizeLocalPackages(out thisPackageList);
-            /*
-            thisPackageList = new List<PackageManifestItem>();
-
-            _listRequest = Client.List();
-            EditorApplication.update += ProgressListPackage;
-            */
+            PackagingOperations.SynchronizeLocalPackages(SynchroGetResponse);
         }
 
-        /*
-        private void ProgressListPackage()
+        private void SynchroGetResponse(List<PackageManifestItem> response)
         {
-            isRunningAsyncOperation = true;
-            if (_listRequest.IsCompleted)
-            {
-                if (_listRequest.Status == StatusCode.Success)
-                {
-                    foreach (UnityEditor.PackageManager.PackageInfo pcInfo in _listRequest.Result)
-                    {
-                        //Debug.Log("package info : " + pcInfo.name + " / version : " + pcInfo.version);
-                        thisPackageList.Add(new PackageManifestItem(pcInfo.name, pcInfo.version));
-                    }
-                }
-                else if (_listRequest.Status >= StatusCode.Failure)
-                {
-                    Debug.Log(_listRequest.Error.message);
-                }
-                isRunningAsyncOperation = false;
-                EditorApplication.update -= ProgressListPackage;
-            }
+            thisPackageList = response;
         }
-        */
 
         /**
          *  PROJECT SETTINGS MANAGEMENT
