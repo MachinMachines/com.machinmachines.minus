@@ -1,11 +1,25 @@
-using System;
+// Copyright 2022 MachinMachines
+//
+// Licensed under the Apache License, Version 2.0 (the "License")
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 using System.Collections.Generic;
 using System.IO;
 
-using UnityEditor;
-using UnityEngine;
-
 using MachinMachines.Utils;
+
+using UnityEditor;
+
+using UnityEngine;
 
 namespace StudioManette.minus
 {
@@ -31,7 +45,7 @@ namespace StudioManette.minus
         private bool showProjectSettings;
         private Vector2 scrollPosProjectSettings;
 
-        /* Getters */ 
+        /* Getters */
         public string PrimarySettingsDirectory
         {
             get { return currentMinusSettings.primaryProject.path + "/ProjectSettings"; }
@@ -99,7 +113,7 @@ namespace StudioManette.minus
                 primaryProjectSettingFiles = Synchronization.GetHashedFilesOfDirectory(PrimarySettingsDirectory);
                 thisProjectSettingFiles = Synchronization.GetHashedFilesOfDirectory(ThisSettingsDirectory);
             }
-            
+
             if (PackagingOperations.isRunningAsyncOperation)
             {
                 EditorGUILayout.LabelField("Waiting for synchronization...");
@@ -135,14 +149,14 @@ namespace StudioManette.minus
         private void DisplayPackages()
         {
             //Display Each Package
-            if (primaryPackageList !=null && primaryPackageList.Count > 0 && thisPackageList != null && thisPackageList.Count > 0)
+            if (primaryPackageList != null && primaryPackageList.Count > 0 && thisPackageList != null && thisPackageList.Count > 0)
             {
                 //Display Headers
                 EditorGUILayout.BeginHorizontal();
-                EditorGUILayout.LabelField("Package name", EditorStyles.boldLabel, GUILayout.Width ( WIDTH_CASE_PACKAGE * 3));
-                EditorGUILayout.LabelField("Primary", EditorStyles.boldLabel, GUILayout.Width ( WIDTH_CASE_PACKAGE ));
-                EditorGUILayout.LabelField("This", EditorStyles.boldLabel, GUILayout.Width ( WIDTH_CASE_PACKAGE ));
-                EditorGUILayout.LabelField("Update", EditorStyles.boldLabel, GUILayout.Width ( WIDTH_CASE_PACKAGE ));
+                EditorGUILayout.LabelField("Package name", EditorStyles.boldLabel, GUILayout.Width(WIDTH_CASE_PACKAGE * 3));
+                EditorGUILayout.LabelField("Primary", EditorStyles.boldLabel, GUILayout.Width(WIDTH_CASE_PACKAGE));
+                EditorGUILayout.LabelField("This", EditorStyles.boldLabel, GUILayout.Width(WIDTH_CASE_PACKAGE));
+                EditorGUILayout.LabelField("Update", EditorStyles.boldLabel, GUILayout.Width(WIDTH_CASE_PACKAGE));
                 EditorGUILayout.EndHorizontal();
 
                 scrollPosPackages = EditorGUILayout.BeginScrollView(scrollPosPackages);
@@ -152,13 +166,13 @@ namespace StudioManette.minus
                     bool isVersionValid = localPackageVersion.Equals(package.packageVersion);
 
                     EditorGUILayout.BeginHorizontal();
-                    EditorGUILayout.LabelField(package.packageName, GUILayout.Width ( WIDTH_CASE_PACKAGE * 3 ));
-                    EditorGUILayout.LabelField(package.packageVersion, GUILayout.Width ( WIDTH_CASE_PACKAGE ));
-                    EditorGUILayout.LabelField(localPackageVersion, isVersionValid ? validStyle : wrongStyle, GUILayout.Width( WIDTH_CASE_PACKAGE ));
+                    EditorGUILayout.LabelField(package.packageName, GUILayout.Width(WIDTH_CASE_PACKAGE * 3));
+                    EditorGUILayout.LabelField(package.packageVersion, GUILayout.Width(WIDTH_CASE_PACKAGE));
+                    EditorGUILayout.LabelField(localPackageVersion, isVersionValid ? validStyle : wrongStyle, GUILayout.Width(WIDTH_CASE_PACKAGE));
 
                     if (isVersionValid)
                     {
-                        GUILayout.Label("------", GUILayout.Width( WIDTH_CASE_PACKAGE ));
+                        GUILayout.Label("------", GUILayout.Width(WIDTH_CASE_PACKAGE));
                     }
                     else
                     {
@@ -190,7 +204,7 @@ namespace StudioManette.minus
             foreach (PackageManifestItem package in thisPackageList)
             {
                 if (_packageName.Equals(package.packageName))
-                { 
+                {
                     return package.packageVersion;
                 }
             }
@@ -213,7 +227,7 @@ namespace StudioManette.minus
 
         private void DisplayProjectSettings()
         {
-            if (primaryProjectSettingFiles !=null && primaryProjectSettingFiles.Count > 0)
+            if (primaryProjectSettingFiles != null && primaryProjectSettingFiles.Count > 0)
             {
                 //Display Headers
                 EditorGUILayout.BeginHorizontal();
@@ -227,12 +241,12 @@ namespace StudioManette.minus
                 foreach (KeyValuePair<string, string> kvp in primaryProjectSettingFiles)
                 {
                     EditorGUILayout.BeginHorizontal();
-                    EditorGUILayout.LabelField(kvp.Key, GUILayout.Width(WIDTH_CASE_PACKAGE*4));
+                    EditorGUILayout.LabelField(kvp.Key, GUILayout.Width(WIDTH_CASE_PACKAGE * 4));
                     //EditorGUILayout.LabelField(kvp.Value);
 
                     string checksumFromThis = FindLocalProjectSettingFile(kvp.Key);
                     bool isChecksumValid = kvp.Value.Equals(checksumFromThis);
-                    EditorGUILayout.LabelField(isChecksumValid ? "Up to date": "Outdated", isChecksumValid ? validStyle : wrongStyle, GUILayout.Width(WIDTH_CASE_PACKAGE));
+                    EditorGUILayout.LabelField(isChecksumValid ? "Up to date" : "Outdated", isChecksumValid ? validStyle : wrongStyle, GUILayout.Width(WIDTH_CASE_PACKAGE));
 
                     if (isChecksumValid)
                     {
@@ -240,7 +254,7 @@ namespace StudioManette.minus
                     }
                     else
                     {
-                        if (GUILayout.Button("Update" , GUILayout.Width(WIDTH_CASE_PACKAGE)))
+                        if (GUILayout.Button("Update", GUILayout.Width(WIDTH_CASE_PACKAGE)))
                         {
                             UpdateSettingFile(kvp.Key);
                         }
@@ -257,7 +271,7 @@ namespace StudioManette.minus
         }
 
         private string FindLocalProjectSettingFile
-            
+
             (string _fileName)
         {
             foreach (KeyValuePair<string, string> kvp in thisProjectSettingFiles)
@@ -274,7 +288,7 @@ namespace StudioManette.minus
         {
             if (EditorUtility.DisplayDialog("Warning", "Do you really want to update the file " + filename + " ? ", "Yes", "No"))
             {
-                FileUtil.ReplaceFile(PrimarySettingsDirectory+ "/" + filename, ThisSettingsDirectory + "/" + filename);
+                FileUtil.ReplaceFile(PrimarySettingsDirectory + "/" + filename, ThisSettingsDirectory + "/" + filename);
 
                 if (EditorUtility.DisplayDialog("info", "File copied. You need to restart the Unity Project to apply changes.", "Restart Editor", "Not yet"))
                 {
