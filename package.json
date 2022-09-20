@@ -2,7 +2,7 @@
   "name": "com.studiomanette.minus",
   "displayName": "Studio Manette Minus",
   "version": "0.1.5",
-  "unity": "2021.3.8f1",
+  "unity": "2021.3",
   "description": "Studio Manette Minus : Synchronisation between one Primary Project and mutliple Secondary projects (Sec Side)",
   "dependencies": {
     "com.studiomanette.utils": "1.2.0"
