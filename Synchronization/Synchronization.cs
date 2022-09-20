@@ -18,71 +18,73 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 
-namespace StudioManette.minus
+namespace MachinMachines
 {
-    public static class Synchronization
+    namespace minus
     {
-        /*
-         * 
-         * Returns a dictionnary of <string,string> :
-         * key : each file contained in _directory
-         * value : MD5 of given file.
-         */
-        public static Dictionary<string, string> GetHashedFilesOfDirectory(string _directory)
+        public static class Synchronization
         {
-            Dictionary<string, string> tmpDict = new Dictionary<string, string>();
-
-            DirectoryInfo info = new DirectoryInfo(_directory);
-            FileInfo[] fileInfo = info.GetFiles();
-            foreach (FileInfo file in fileInfo)
+            /*
+             * Returns a dictionnary of <string,string> :
+             * key : each file contained in _directory
+             * value : MD5 of given file.
+             */
+            public static Dictionary<string, string> GetHashedFilesOfDirectory(string _directory)
             {
-                string hashStr = "none";
-                MD5 md5 = MD5.Create();
+                Dictionary<string, string> tmpDict = new Dictionary<string, string>();
 
-                using (var stream = File.OpenRead(file.FullName))
+                DirectoryInfo info = new DirectoryInfo(_directory);
+                FileInfo[] fileInfo = info.GetFiles();
+                foreach (FileInfo file in fileInfo)
                 {
-                    var hash = md5.ComputeHash(stream);
-                    hashStr = BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
-                }
-                tmpDict.Add(file.Name, hashStr);
-            }
-            return tmpDict;
-        }
+                    string hashStr = "none";
+                    MD5 md5 = MD5.Create();
 
-
-        public static List<PackageManifestItem> GetExternalPackagesList(string packageDirectory)
-        {
-            List<PackageManifestItem> packageList = new List<PackageManifestItem>();
-            string strLine;
-
-            StreamReader reader = new StreamReader(packageDirectory + "/manifest.json");
-
-            while ((strLine = reader.ReadLine()) != null)
-            {
-                if (strLine.Contains("\"dependencies\": {")) break;
-            }
-
-            while ((strLine = reader.ReadLine()) != null)
-            {
-                if (strLine.Contains("},")) break;
-                else
-                {
-                    //regex : \"(.*)\"\: \"(.*)\"[\,]*
-                    Regex kPackageVersionRegex = new Regex("\"(.*)\"\\: \"(.*)\"[\\,]*", RegexOptions.Compiled | RegexOptions.Singleline);
-
-                    MatchCollection matches = kPackageVersionRegex.Matches(strLine);
-                    //Debug.Log("matches count : " + matches.Count);
-                    if (matches.Count > 0)
+                    using (var stream = File.OpenRead(file.FullName))
                     {
-                        string package = matches[0].Groups[1].Value;
-                        string version = matches[0].Groups[2].Value;
+                        var hash = md5.ComputeHash(stream);
+                        hashStr = BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
+                    }
+                    tmpDict.Add(file.Name, hashStr);
+                }
+                return tmpDict;
+            }
 
-                        packageList.Add(new PackageManifestItem(package, version));
+
+            public static List<PackageManifestItem> GetExternalPackagesList(string packageDirectory)
+            {
+                List<PackageManifestItem> packageList = new List<PackageManifestItem>();
+                string strLine;
+
+                StreamReader reader = new StreamReader(packageDirectory + "/manifest.json");
+
+                while ((strLine = reader.ReadLine()) != null)
+                {
+                    if (strLine.Contains("\"dependencies\": {")) break;
+                }
+
+                while ((strLine = reader.ReadLine()) != null)
+                {
+                    if (strLine.Contains("},")) break;
+                    else
+                    {
+                        //regex : \"(.*)\"\: \"(.*)\"[\,]*
+                        Regex kPackageVersionRegex = new Regex("\"(.*)\"\\: \"(.*)\"[\\,]*", RegexOptions.Compiled | RegexOptions.Singleline);
+
+                        MatchCollection matches = kPackageVersionRegex.Matches(strLine);
+                        //Debug.Log("matches count : " + matches.Count);
+                        if (matches.Count > 0)
+                        {
+                            string package = matches[0].Groups[1].Value;
+                            string version = matches[0].Groups[2].Value;
+
+                            packageList.Add(new PackageManifestItem(package, version));
+                        }
                     }
                 }
-            }
 
-            return packageList;
+                return packageList;
+            }
         }
     }
 }

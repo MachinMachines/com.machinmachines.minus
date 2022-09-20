@@ -12,18 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace StudioManette.minus
+namespace MachinMachines
 {
-    [System.Serializable]
-    public class PackageManifestItem
+    namespace minus
     {
-        public string packageName;
-        public string packageVersion;
-
-        public PackageManifestItem(string _packageName, string _packageVersion)
+        [System.Serializable]
+        public class PackageManifestItem
         {
-            this.packageName = _packageName;
-            this.packageVersion = _packageVersion;
+            public string packageName;
+            public string packageVersion;
+
+            public PackageManifestItem(string _packageName, string _packageVersion)
+            {
+                this.packageName = _packageName;
+                this.packageVersion = _packageVersion;
+            }
         }
     }
 }
