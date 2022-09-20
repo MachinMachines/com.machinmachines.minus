@@ -5,6 +5,8 @@ using System.IO;
 using UnityEditor;
 using UnityEngine;
 
+using MachinMachines.Utils;
+
 namespace StudioManette.minus
 {
     public class MinusWindow : EditorWindow
@@ -63,7 +65,7 @@ namespace StudioManette.minus
             wrongStyle = new GUIStyle(EditorStyles.label);
             wrongStyle.normal.textColor = Color.yellow;
 
-            List<MinusSettingsObject> settingsList = Utils.AssetDatabaseExtensions.FindAssetsByType<MinusSettingsObject>();
+            List<MinusSettingsObject> settingsList = AssetDatabaseExtensions.FindAssetsByType<MinusSettingsObject>();
             if (settingsList.Count == 0)
             {
                 Debug.LogError("There is no MinusSettingsObject in the project, please create one (Create/StudioManette/MinusSettings Asset).");
