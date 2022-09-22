@@ -2,8 +2,7 @@
     "name": "StudioManette.Minus",
     "rootNamespace": "StudioManette.minus",
     "references": [
-        "StudioManette.Utils.Common",
-        "StudioManette.Utils.Editor"
+        "MachinMachines.Utils.Editor"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
