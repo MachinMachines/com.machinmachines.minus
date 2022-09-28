@@ -50,7 +50,6 @@ namespace MachinMachines
                 return tmpDict;
             }
 
-
             public static List<PackageManifestItem> GetExternalPackagesList(string packageDirectory)
             {
                 List<PackageManifestItem> packageList = new List<PackageManifestItem>();
