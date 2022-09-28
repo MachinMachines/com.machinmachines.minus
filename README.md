@@ -1,2 +1,2 @@
-# com.studiomanette.minus
-Studio Manette Minus : Synchronisation between one Primary Project and mutliple Secondary projects (Secondary Side)
+# com.machinmachines.minus
+MachinMachines Minus : Synchronisation between one Primary Project and mutliple Secondary projects (Secondary Side)

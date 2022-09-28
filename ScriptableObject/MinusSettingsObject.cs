@@ -18,7 +18,7 @@ namespace MachinMachines
 {
     namespace minus
     {
-        [CreateAssetMenu(fileName = "MinusSettings", menuName = "StudioManette/MinusSettings Asset", order = 1)]
+        [CreateAssetMenu(fileName = "MinusSettings", menuName = "MachinMachines/MinusSettings Asset", order = 1)]
         public class MinusSettingsObject : ScriptableObject
         {
             public ProjectInstance primaryProject;

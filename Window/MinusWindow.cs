@@ -62,10 +62,10 @@ namespace MachinMachines
              * INITIALIZATION
              */
 
-            [MenuItem("Studio Manette/Minus")]
+            [MenuItem("MachinMachines/Minus")]
             public static void ShowWindow()
             {
-                EditorWindow.GetWindow(typeof(MinusWindow), false, "Minus - Studio Manette");
+                EditorWindow.GetWindow(typeof(MinusWindow), false, "Minus - MachinMachines");
             }
 
             public void OnEnable()
@@ -84,7 +84,7 @@ namespace MachinMachines
                 List<MinusSettingsObject> settingsList = AssetDatabaseExtensions.FindAssetsByType<MinusSettingsObject>();
                 if (settingsList.Count == 0)
                 {
-                    Debug.LogError("There is no MinusSettingsObject in the project, please create one (Create/StudioManette/MinusSettings Asset).");
+                    Debug.LogError("There is no MinusSettingsObject in the project, please create one (Create/MachinMachines/MinusSettings Asset).");
                 }
                 else if (settingsList.Count > 1)
                 {

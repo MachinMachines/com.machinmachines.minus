@@ -1,6 +1,6 @@
 {
-    "name": "StudioManette.Minus",
-    "rootNamespace": "StudioManette.minus",
+    "name": "MachinMachines Minus",
+    "rootNamespace": "MachinMachines.minus",
     "references": [
         "MachinMachines.Utils.Editor"
     ],
