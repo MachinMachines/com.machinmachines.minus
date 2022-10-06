@@ -18,13 +18,13 @@ namespace MachinMachines
 {
     namespace minus
     {
-        static class MinusSettings
+        public static class MinusSettings
         {
             private const string k_PackageName = "com.machinmachines.minus";
 
             static Settings s_Instance;
 
-            internal static Settings instance
+            public static Settings instance
             {
                 get
                 {

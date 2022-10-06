@@ -45,7 +45,7 @@ namespace MachinMachines
             private Vector2 scrollPosProjectSettings;
 
             /* settings */ 
-            private readonly string SETTINGS_PRIMARY_PROJECT_PATH = "primaryProjectPath";
+            public static readonly string SETTINGS_PRIMARY_PROJECT_PATH = "primaryProjectPath";
             private string tmpPrimaryProjectPath;
 
             /* Getters */
