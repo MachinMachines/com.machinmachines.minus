@@ -2,7 +2,8 @@
     "name": "MachinMachines Minus",
     "rootNamespace": "MachinMachines.minus",
     "references": [
-        "MachinMachines.Utils.Editor"
+        "MachinMachines.Utils.Editor",
+        "Unity.Settings.Editor"
     ],
     "includePlatforms": [
         "Editor"

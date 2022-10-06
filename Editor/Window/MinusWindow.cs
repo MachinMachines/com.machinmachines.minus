@@ -29,9 +29,6 @@ namespace MachinMachines
         {
             private static readonly int WIDTH_CASE_PACKAGE = 100;
 
-            /* visible properties */
-            public MinusSettingsObject currentMinusSettings;
-
             private List<PackageManifestItem> primaryPackageList;
             private List<PackageManifestItem> thisPackageList;
 
@@ -47,10 +44,19 @@ namespace MachinMachines
             private bool showProjectSettings;
             private Vector2 scrollPosProjectSettings;
 
+            /* settings */ 
+            private readonly string SETTINGS_PRIMARY_PROJECT_PATH = "primaryProjectPath";
+            private string tmpPrimaryProjectPath;
+
             /* Getters */
+            public string PrimaryPackagesDirectory
+            {
+                get { return MinusSettings.instance.Get<string>(SETTINGS_PRIMARY_PROJECT_PATH, SettingsScope.Project) + "/Packages"; }
+            }
+
             public string PrimarySettingsDirectory
             {
-                get { return currentMinusSettings.primaryProject.path + "/ProjectSettings"; }
+                get { return MinusSettings.instance.Get<string>(SETTINGS_PRIMARY_PROJECT_PATH, SettingsScope.Project) + "/ProjectSettings"; }
             }
 
             public string ThisSettingsDirectory
@@ -80,20 +86,6 @@ namespace MachinMachines
                 validStyle.normal.textColor = Color.green;
                 wrongStyle = new GUIStyle(EditorStyles.label);
                 wrongStyle.normal.textColor = Color.yellow;
-
-                List<MinusSettingsObject> settingsList = AssetDatabaseExtensions.FindAssetsByType<MinusSettingsObject>();
-                if (settingsList.Count == 0)
-                {
-                    Debug.LogError("There is no MinusSettingsObject in the project, please create one (Create/MachinMachines/MinusSettings Asset).");
-                }
-                else if (settingsList.Count > 1)
-                {
-                    Debug.LogError("There is more than one MinusSettingsObject, you should have only one. Please remove the extra ones.");
-                }
-                else
-                {
-                    currentMinusSettings = settingsList[0];
-                }
             }
 
             public void OnGUI()
@@ -103,7 +95,12 @@ namespace MachinMachines
                 {
                     EditorGUILayout.LabelField("PROPERTIES", EditorStyles.boldLabel);
 
-                    currentMinusSettings = (MinusSettingsObject)EditorGUILayout.ObjectField(currentMinusSettings, typeof(MinusSettingsObject), false);
+                    EditorGUI.BeginChangeCheck();
+                    tmpPrimaryProjectPath = EditorGUILayout.TextField("Primary Project Path", tmpPrimaryProjectPath);
+                    if (EditorGUI.EndChangeCheck())
+                    {
+                        MinusSettings.instance.Set<string>(SETTINGS_PRIMARY_PROJECT_PATH, tmpPrimaryProjectPath, SettingsScope.Project);
+                    }
                 }
                 EditorGUILayout.EndVertical();
 
@@ -111,7 +108,7 @@ namespace MachinMachines
                 if (GUILayout.Button("Synchronize"))
                 {
                     SynchronizeLocalPackages();
-                    primaryPackageList = Synchronization.GetExternalPackagesList(currentMinusSettings.primaryProject.path + "/Packages");
+                    primaryPackageList = Synchronization.GetExternalPackagesList(PrimaryPackagesDirectory);
                     primaryProjectSettingFiles = Synchronization.GetHashedFilesOfDirectory(PrimarySettingsDirectory);
                     thisProjectSettingFiles = Synchronization.GetHashedFilesOfDirectory(ThisSettingsDirectory);
                 }

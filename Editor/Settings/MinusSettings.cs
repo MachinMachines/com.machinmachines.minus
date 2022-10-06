@@ -12,27 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using UnityEngine;
+using UnityEditor.SettingsManagement;
 
 namespace MachinMachines
 {
     namespace minus
     {
-        [CreateAssetMenu(fileName = "MinusSettings", menuName = "MachinMachines/MinusSettings Asset", order = 1)]
-        public class MinusSettingsObject : ScriptableObject
+        static class MinusSettings
         {
-            public ProjectInstance primaryProject;
-        }
+            private const string k_PackageName = "com.machinmachines.minus";
 
-        [System.Serializable]
-        public class ProjectInstance
-        {
+            static Settings s_Instance;
 
-            public string path;
-
-            public ProjectInstance(string _path)
+            internal static Settings instance
             {
-                path = _path;
+                get
+                {
+                    if (s_Instance == null)
+                        s_Instance = new Settings(k_PackageName);
+
+                    return s_Instance;
+                }
             }
         }
     }
