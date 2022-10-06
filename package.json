@@ -1,11 +1,11 @@
 {
   "name": "com.machinmachines.minus",
   "displayName": "MachinMachines Minus",
-  "version": "0.1.11",
+  "version": "0.2.0",
   "unity": "2021.3",
   "description": "MachinMachines Minus : Synchronisation between one Primary Project and mutliple Secondary projects (Sec Side)",
   "dependencies": {
-    "com.machinmachines.utils": "1.3.16"
+    "com.machinmachines.utils": "1.3.17"
   },
   "publishConfig": {
     "registry": "https://npm.pkg.github.com/@MachinMachines"
