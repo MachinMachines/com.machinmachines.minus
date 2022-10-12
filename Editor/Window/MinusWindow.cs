@@ -14,7 +14,7 @@
 
 using System.Collections.Generic;
 using System.IO;
-
+using System.Linq;
 using MachinMachines.Utils;
 
 using UnityEditor;
@@ -200,14 +200,9 @@ namespace MachinMachines
 
             private string FindPackageVersionInThis(string _packageName)
             {
-                foreach (PackageManifestItem package in thisPackageList)
-                {
-                    if (_packageName.Equals(package.packageName))
-                    {
-                        return package.packageVersion;
-                    }
-                }
-                return "missing";
+                PackageManifestItem tpmPackage = thisPackageList.First(t => t.packageName == _packageName);
+
+                return tpmPackage != null ? tpmPackage.packageVersion : "missing";
             }
 
             private void SynchronizeLocalPackages()
