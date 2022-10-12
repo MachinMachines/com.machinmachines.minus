@@ -21,6 +21,7 @@ namespace MachinMachines
         {
             public string packageName;
             public string packageVersion;
+            public bool selected = true;
 
             public PackageManifestItem(string _packageName, string _packageVersion)
             {
