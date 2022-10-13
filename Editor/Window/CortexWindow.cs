@@ -194,7 +194,7 @@ namespace MachinMachines
                 currentStep++;
                 if (steps.Count > currentStep)
                 {
-                    Debug.Log("step " + currentStep + " BEGIN" + " / priority : " + steps[currentStep].priority);
+                    //Debug.Log("step " + currentStep + " BEGIN" + " / priority : " + steps[currentStep].priority);
                     steps[currentStep].Action();
                 }
                 else
@@ -236,6 +236,11 @@ namespace MachinMachines
                 if (Directory.Exists(newFolder))
                 {
                     throw new Exception("the folder " + newFolder + " exists already, please delete it and retry.");
+                }
+
+                if (EditorUtility.DisplayDialog("Info", "Do you really want to create a new project on this path : " + newFolder + " ?", "Yes", "No"))
+                {
+                    CallNextStep();
                 }
             }
 
