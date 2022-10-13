@@ -1,0 +1,235 @@
+// Copyright 2022 MachinMachines
+//
+// Licensed under the Apache License, Version 2.0 (the "License")
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+
+using UnityEditor;
+
+using UnityEngine;
+
+namespace MachinMachines
+{
+    namespace Minus
+    {
+        public class CortexWindow : EditorWindow
+        {
+            //constants
+            private readonly string assetsPath = "Assets";
+            private readonly string projectSettingsPath = "ProjectSettings";
+            private readonly string PackagesPath = "Packages";
+
+            private List<ActionStep> steps;
+            private string newFolder;
+            private int currentStep = -1;
+
+            private readonly string SETTINGNAME_ALLOWPACKAGE = "allowLocalPackages";
+            private bool tmpAllowPackages;
+
+            private string tmpCortexPath;
+
+            private List<PackageManifestItem> tmpPackagesToClone;
+
+            [MenuItem("MachinMachines/Minus/Create New Project...")]
+            public static void ShowWindow()
+            {
+                EditorWindow.GetWindow(typeof(CortexWindow), false, "Cortex - MachinMachines");
+            }
+
+            public void OnEnable()
+            {
+                tmpAllowPackages = MinusSettings.instance.Get<bool>(SETTINGNAME_ALLOWPACKAGE, SettingsScope.Project);
+                Init();
+            }
+
+            public void OnGUI()
+            {
+                //GROUP 1 : PROPERTIES
+                EditorGUILayout.BeginVertical("Box");
+                {
+                    EditorGUILayout.LabelField("PROPERTIES", EditorStyles.boldLabel);
+
+                    
+                    EditorGUI.BeginChangeCheck();
+                    tmpAllowPackages = EditorGUILayout.Toggle(SETTINGNAME_ALLOWPACKAGE, tmpAllowPackages);
+                    if (EditorGUI.EndChangeCheck())
+                    {
+                        MinusSettings.instance.Set<bool>(SETTINGNAME_ALLOWPACKAGE, tmpAllowPackages, SettingsScope.Project);
+                    }
+                    
+                }
+                EditorGUILayout.EndVertical();
+
+                if (GUILayout.Button("Create new Project"))
+                {
+                    CloneWindow.ShowWindow("select path to the new project : ", CreateProject);
+                }
+            }
+
+            private void Init()
+            {
+                //init steps
+                steps = new List<ActionStep>();
+                steps.Add(new ActionStep(0, CheckLocalPackages));
+                steps.Add(new ActionStep(1, SetupMinusSettings));
+                steps.Add(new ActionStep(2, CopyFiles));
+                steps.Add(new ActionStep(4, ProcessPackageManifest));
+                steps.Add(new ActionStep(6, RestoreMinusSettings));
+
+                //sort steps (uncomment if needed)
+                steps.Sort((p1, p2) => p1.priority - p2.priority);
+            }
+
+            private void CreateProject(string projectPath, List<PackageManifestItem> packagesToClone)
+            {
+                Debug.Log("create new project : " + projectPath);
+
+                newFolder = projectPath;
+                tmpPackagesToClone = packagesToClone;
+
+                currentStep = 0;
+                steps[currentStep].Action();
+            }
+
+            private void CallNextStep()
+            {
+                //Debug.Log("step " + currentStep + " / well done");
+
+                //passer au step suivant
+                currentStep++;
+                if (steps.Count > currentStep)
+                {
+                    Debug.Log("step " + currentStep + " BEGIN" + " / priority : " + steps[currentStep].priority);
+                    steps[currentStep].Action();
+                }
+                else
+                {
+                    EditorUtility.DisplayDialog("Info", "The following project has been created : " + newFolder, "OK");
+                }
+            }
+
+            private void CopyFiles()
+            {
+                newFolder = newFolder.Replace("\\", "/");
+
+                //Create new folder
+                Directory.CreateDirectory(newFolder);
+
+                //Create empty Assets Folder
+                Directory.CreateDirectory(newFolder + "/" + assetsPath);
+
+                //Copy Packages
+                FileUtil.CopyFileOrDirectory(Directory.GetCurrentDirectory() + "/" + PackagesPath,
+                                             newFolder + "/" + PackagesPath);
+
+                //Copy ProjectSettings
+                FileUtil.CopyFileOrDirectory(Directory.GetCurrentDirectory() + "/" + projectSettingsPath,
+                                             newFolder + "/" + projectSettingsPath);
+
+                CallNextStep();
+            }
+
+            private void CheckLocalPackages()
+            {
+                if (!MinusSettings.instance.Get<bool>("allowLocalPackages", SettingsScope.Project))
+                {
+                    string newManifestJson = Directory.GetCurrentDirectory() + "/Packages/manifest.json";
+                    bool hasAtLeastOneLocalPackage = false;
+
+                    List<string> allLines = new List<string>(File.ReadAllLines(newManifestJson));
+                    for (int i = 0; i < allLines.Count; i++)
+                    {
+                        //vérifier si aucun package n'est en local (mot-clef "file:")
+                        if (allLines[i].Contains("file:"))
+                        {
+                            hasAtLeastOneLocalPackage = true;
+                        }
+                    }
+
+                    if (hasAtLeastOneLocalPackage)
+                    {
+                        if (EditorUtility.DisplayDialog("Warning", "Warning : some packages are local, it is strongly discouraged to have local packages deployed in a secondary project.", "I'll do it anyway", "cancel"))
+                        {
+                            CallNextStep();
+                        }
+                        else
+                        {
+                            throw new Exception("step cancelled by user.");
+                            // tout stopper
+                        }
+                    }
+                    else
+                    {
+                        CallNextStep();
+                    }
+                }
+                else
+                {
+                    CallNextStep();
+                }
+            }
+
+            private void ProcessPackageManifest()
+            {
+                //Dans le Package manifest.json, retirer la ligne com.machinmachines.cortex et rajouter la ligne com.machinmachines.minus
+                string newManifestJson = newFolder + "/Packages/manifest.json";
+
+                List<string> allLines = new List<string>(File.ReadAllLines(newManifestJson));
+                for (int i = 0; i < allLines.Count; i++)
+                {
+                    string[] splittedline = allLines[i].Split("\"");
+                    if (splittedline.Length > 2)
+                    {
+                        string packageNameLine = splittedline[1];
+
+                        /* gestion des packages selectionnés ou non*/
+                        PackageManifestItem packageInList = tmpPackagesToClone.FirstOrDefault(x => x.packageName == packageNameLine);
+
+                        if (packageInList == null || packageInList.selected)
+                        {
+                            //nothing, the line is staying
+                        }
+                        else
+                        {
+                            allLines[i] = "";
+                        }
+                    }
+                }
+
+                allLines.RemoveAll(x => string.IsNullOrWhiteSpace(x));
+
+                File.WriteAllLines(newManifestJson, allLines);
+
+                CallNextStep();
+            }
+
+            private void SetupMinusSettings()
+            {
+                tmpCortexPath = MinusSettings.instance.Get<string>(MinusWindow.SETTINGS_PRIMARY_PROJECT_PATH, SettingsScope.Project);
+                MinusSettings.instance.Set<string>(MinusWindow.SETTINGS_PRIMARY_PROJECT_PATH, Directory.GetCurrentDirectory(), SettingsScope.Project);
+
+                CallNextStep();
+            }
+
+            private void RestoreMinusSettings()
+            {
+                MinusSettings.instance.Set<string>(MinusWindow.SETTINGS_PRIMARY_PROJECT_PATH, tmpCortexPath, SettingsScope.Project);
+
+                CallNextStep();
+            }
+        }
+    }
+}

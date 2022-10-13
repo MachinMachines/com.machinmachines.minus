@@ -22,7 +22,7 @@ using UnityEngine;
 
 namespace MachinMachines
 {
-    namespace minus
+    namespace Minus
     {
         public static class PackagingOperations
         {

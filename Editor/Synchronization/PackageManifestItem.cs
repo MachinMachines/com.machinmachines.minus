@@ -14,7 +14,7 @@
 
 namespace MachinMachines
 {
-    namespace minus
+    namespace Minus
     {
         [System.Serializable]
         public class PackageManifestItem

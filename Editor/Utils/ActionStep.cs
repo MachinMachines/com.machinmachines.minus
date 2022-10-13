@@ -12,27 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using UnityEditor.SettingsManagement;
+using UnityEngine;
 
 namespace MachinMachines
 {
     namespace Minus
     {
-        public static class MinusSettings
+        public class ActionStep
         {
-            private const string k_PackageName = "com.machinmachines.minus";
+            public int priority;
+            public delegate void DelegateVoid();
+            public bool isDone = false;
 
-            static Settings s_Instance;
+            private DelegateVoid action;
 
-            public static Settings instance
+            public ActionStep(int _priority, DelegateVoid _firstAction)
             {
-                get
-                {
-                    if (s_Instance == null)
-                        s_Instance = new Settings(k_PackageName);
+                priority = _priority;
+                action = _firstAction;
+            }
 
-                    return s_Instance;
-                }
+            public void Action()
+            {
+                action();
             }
         }
     }

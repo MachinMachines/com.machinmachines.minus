@@ -23,7 +23,7 @@ using UnityEngine;
 
 namespace MachinMachines
 {
-    namespace minus
+    namespace Minus
     {
         public class MinusWindow : EditorWindow
         {
@@ -68,7 +68,7 @@ namespace MachinMachines
              * INITIALIZATION
              */
 
-            [MenuItem("MachinMachines/Minus")]
+            [MenuItem("MachinMachines/Minus/Package Sync Window")]
             public static void ShowWindow()
             {
                 EditorWindow.GetWindow(typeof(MinusWindow), false, "Minus - MachinMachines");

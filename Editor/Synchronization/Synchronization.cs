@@ -20,7 +20,7 @@ using System.Text.RegularExpressions;
 
 namespace MachinMachines
 {
-    namespace minus
+    namespace Minus
     {
         public static class Synchronization
         {
