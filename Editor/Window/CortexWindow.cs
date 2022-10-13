@@ -28,9 +28,12 @@ namespace MachinMachines
         public class CortexWindow : EditorWindow
         {
             //constants
-            private readonly string assetsPath = "Assets";
-            private readonly string projectSettingsPath = "ProjectSettings";
-            private readonly string PackagesPath = "Packages";
+            private static readonly string assetsPath = "Assets";
+            private static readonly string projectSettingsPath = "ProjectSettings";
+            private static readonly string PackagesPath = "Packages";
+            private static readonly int WIDTH_CASE_TOGGLE = 20;
+            private static readonly int WIDTH_CASE_PACKAGE = 300;
+            private static readonly int WIDTH_CASE_BUTTON = 100;
 
             private List<ActionStep> steps;
             private string newFolder;
@@ -43,10 +46,24 @@ namespace MachinMachines
 
             private List<PackageManifestItem> tmpPackagesToClone;
 
+            /* from clone window*/
+            private static string projectPath;
+
+            private List<PackageManifestItem> packageList;
+
+            private Vector2 scrollPosPackages;
+
+            private bool showPackages = false;
+
+            private static CortexWindow instance;
+
+            /* from clone window*/
+
             [MenuItem("MachinMachines/Minus/Create New Project...")]
             public static void ShowWindow()
             {
-                EditorWindow.GetWindow(typeof(CortexWindow), false, "Cortex - MachinMachines");
+                instance = (CortexWindow)EditorWindow.GetWindow(typeof(CortexWindow), false, "Cortex - MachinMachines");
+                instance.LaunchSync();
             }
 
             public void OnEnable()
@@ -61,7 +78,6 @@ namespace MachinMachines
                 EditorGUILayout.BeginVertical("Box");
                 {
                     EditorGUILayout.LabelField("PROPERTIES", EditorStyles.boldLabel);
-
                     
                     EditorGUI.BeginChangeCheck();
                     tmpAllowPackages = EditorGUILayout.Toggle(SETTINGNAME_ALLOWPACKAGE, tmpAllowPackages);
@@ -69,20 +85,86 @@ namespace MachinMachines
                     {
                         MinusSettings.instance.Set<bool>(SETTINGNAME_ALLOWPACKAGE, tmpAllowPackages, SettingsScope.Project);
                     }
-                    
-                }
-                EditorGUILayout.EndVertical();
 
+                    EditorGUILayout.LabelField("Project Path : ");
+                    projectPath = EditorGUILayout.TextField(projectPath);
+
+                    EditorGUILayout.EndVertical();
+                }
+
+
+                //Display Each Package
+                if (packageList != null && packageList.Count > 0)
+                {
+                    showPackages = EditorGUILayout.Foldout(showPackages, "Select the Packages you want to clone: ", EditorStyles.foldoutHeader);
+
+                    if (showPackages)
+                    {
+                        //Button Helpers
+                        EditorGUILayout.BeginHorizontal();
+                        if (GUILayout.Button("select all", GUILayout.Width(WIDTH_CASE_BUTTON)))
+                        {
+                            foreach (PackageManifestItem package in packageList) package.selected = true;
+                        }
+                        if (GUILayout.Button("deselect all", GUILayout.Width(WIDTH_CASE_BUTTON)))
+                        {
+                            foreach (PackageManifestItem package in packageList) package.selected = false;
+                        }
+                        EditorGUILayout.EndHorizontal();
+
+                        //Display Headers
+                        EditorGUILayout.BeginHorizontal();
+                        EditorGUILayout.LabelField("", EditorStyles.boldLabel, GUILayout.Width(WIDTH_CASE_TOGGLE));
+                        EditorGUILayout.LabelField("Package name", EditorStyles.boldLabel, GUILayout.Width(WIDTH_CASE_PACKAGE));
+                        EditorGUILayout.LabelField("Version", EditorStyles.boldLabel, GUILayout.Width(WIDTH_CASE_PACKAGE));
+                        EditorGUILayout.EndHorizontal();
+
+                        scrollPosPackages = EditorGUILayout.BeginScrollView(scrollPosPackages);
+                        foreach (PackageManifestItem package in packageList)
+                        {
+                            EditorGUILayout.BeginHorizontal();
+                            package.selected = EditorGUILayout.Toggle(package.selected, GUILayout.Width(WIDTH_CASE_TOGGLE));
+                            EditorGUILayout.LabelField(package.packageName, GUILayout.Width(WIDTH_CASE_PACKAGE));
+                            EditorGUILayout.LabelField(package.packageVersion, GUILayout.Width(WIDTH_CASE_PACKAGE));
+                            EditorGUILayout.EndHorizontal();
+                        }
+                        EditorGUILayout.EndScrollView();
+                    }
+
+                    if (GUILayout.Button("CLONE"))
+                    {
+                        try
+                        {
+                            CreateProject(projectPath, packageList);
+                            this.Close();
+                        }
+                        catch (Exception e)
+                        {
+                            EditorUtility.DisplayDialog("Minus", "ERROR : " + e.Message, "OK");
+                        }
+                    }
+
+                }
+                else
+                {
+                    EditorGUILayout.LabelField("please wait...");
+                }
+
+
+
+                /*
                 if (GUILayout.Button("Create new Project"))
                 {
                     CloneWindow.ShowWindow("select path to the new project : ", CreateProject);
                 }
+                */
             }
 
             private void Init()
             {
                 //init steps
                 steps = new List<ActionStep>();
+                steps.Add(new ActionStep(-1, CheckPossibility));
                 steps.Add(new ActionStep(0, CheckLocalPackages));
                 steps.Add(new ActionStep(1, SetupMinusSettings));
                 steps.Add(new ActionStep(2, CopyFiles));
@@ -123,7 +205,7 @@ namespace MachinMachines
 
             private void CopyFiles()
             {
-                newFolder = newFolder.Replace("\\", "/");
+                //newFolder = newFolder.Replace("\\", "/");
 
                 //Create new folder
                 Directory.CreateDirectory(newFolder);
@@ -140,6 +222,21 @@ namespace MachinMachines
                                              newFolder + "/" + projectSettingsPath);
 
                 CallNextStep();
+            }
+
+            private void CheckPossibility()
+            {
+                if (string.IsNullOrWhiteSpace(newFolder))
+                {
+                    throw new Exception("please provide a project path.");
+                }
+
+                newFolder = newFolder.Replace("\\", "/");
+
+                if (Directory.Exists(newFolder))
+                {
+                    throw new Exception("the folder " + newFolder + " exists already, please delete it and retry.");
+                }
             }
 
             private void CheckLocalPackages()
@@ -229,6 +326,12 @@ namespace MachinMachines
                 MinusSettings.instance.Set<string>(MinusWindow.SETTINGS_PRIMARY_PROJECT_PATH, tmpCortexPath, SettingsScope.Project);
 
                 CallNextStep();
+            }
+
+            private void LaunchSync()
+            {
+                packageList = null;
+                packageList = Synchronization.GetExternalPackagesList(Directory.GetCurrentDirectory() + "/Packages");
             }
         }
     }
