@@ -15,7 +15,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using MachinMachines.Utils;
 
 using UnityEditor;
 
@@ -27,7 +26,13 @@ namespace MachinMachines
     {
         public class MinusWindow : EditorWindow
         {
-            private static readonly int WIDTH_CASE_PACKAGE = 100;
+            private static readonly int WIDTH_CASE_PACKAGE_NAME = 350;
+            private static readonly int WIDTH_CASE_PACKAGE_VERSION = 450;
+            private static readonly int WIDTH_CASE_UPDATE_BUTTON = 100;
+
+            private static readonly int WIDTH_CASE_PROJECT_SETTINGS = 100;            
+
+            private static readonly string STR_MISSING_PACKAGE = "missing";
 
             private List<PackageManifestItem> primaryPackageList;
             private List<PackageManifestItem> thisPackageList;
@@ -35,10 +40,10 @@ namespace MachinMachines
             private Dictionary<string, string> primaryProjectSettingFiles;
             private Dictionary<string, string> thisProjectSettingFiles;
 
-
             /* ui properties */
             private GUIStyle validStyle;
             private GUIStyle wrongStyle;
+            private GUIStyle missingStyle;
             private bool showPackages;
             private Vector2 scrollPosPackages;
             private bool showProjectSettings;
@@ -57,6 +62,11 @@ namespace MachinMachines
             public string PrimarySettingsDirectory
             {
                 get { return MinusSettings.instance.Get<string>(SETTINGS_PRIMARY_PROJECT_PATH, SettingsScope.Project) + "/ProjectSettings"; }
+            }
+
+            public string ThisPackagesDirectory
+            {
+                get { return Directory.GetCurrentDirectory() + "/Packages"; }
             }
 
             public string ThisSettingsDirectory
@@ -86,6 +96,8 @@ namespace MachinMachines
                 validStyle.normal.textColor = Color.green;
                 wrongStyle = new GUIStyle(EditorStyles.label);
                 wrongStyle.normal.textColor = Color.yellow;
+                missingStyle = new GUIStyle(EditorStyles.label);
+                missingStyle.normal.textColor = new Color(1.0f,0.5f,0.0f);
             }
 
             public void OnGUI()
@@ -96,7 +108,7 @@ namespace MachinMachines
                     EditorGUILayout.LabelField("PROPERTIES", EditorStyles.boldLabel);
 
                     EditorGUI.BeginChangeCheck();
-                    tmpPrimaryProjectPath = EditorGUILayout.TextField("Primary Project Path", tmpPrimaryProjectPath);
+                    tmpPrimaryProjectPath = EditorGUILayout.TextField("Primary Project Path", MinusSettings.instance.Get<string>(SETTINGS_PRIMARY_PROJECT_PATH, SettingsScope.Project));
                     if (EditorGUI.EndChangeCheck())
                     {
                         MinusSettings.instance.Set<string>(SETTINGS_PRIMARY_PROJECT_PATH, tmpPrimaryProjectPath, SettingsScope.Project);
@@ -107,8 +119,9 @@ namespace MachinMachines
                 //GROUP 2 : BUTTONS
                 if (GUILayout.Button("Synchronize"))
                 {
-                    SynchronizeLocalPackages();
+                    //SynchronizeLocalPackages();
                     primaryPackageList = Synchronization.GetExternalPackagesList(PrimaryPackagesDirectory);
+                    thisPackageList = Synchronization.GetExternalPackagesList(ThisPackagesDirectory);
                     primaryProjectSettingFiles = Synchronization.GetHashedFilesOfDirectory(PrimarySettingsDirectory);
                     thisProjectSettingFiles = Synchronization.GetHashedFilesOfDirectory(ThisSettingsDirectory);
                 }
@@ -152,30 +165,38 @@ namespace MachinMachines
                 {
                     //Display Headers
                     EditorGUILayout.BeginHorizontal();
-                    EditorGUILayout.LabelField("Package name", EditorStyles.boldLabel, GUILayout.Width(WIDTH_CASE_PACKAGE * 3));
-                    EditorGUILayout.LabelField("Primary", EditorStyles.boldLabel, GUILayout.Width(WIDTH_CASE_PACKAGE));
-                    EditorGUILayout.LabelField("This", EditorStyles.boldLabel, GUILayout.Width(WIDTH_CASE_PACKAGE));
-                    EditorGUILayout.LabelField("Update", EditorStyles.boldLabel, GUILayout.Width(WIDTH_CASE_PACKAGE));
+                    EditorGUILayout.LabelField("Package name", EditorStyles.boldLabel, GUILayout.Width(WIDTH_CASE_PACKAGE_NAME));
+                    EditorGUILayout.LabelField("Primary", EditorStyles.boldLabel, GUILayout.Width(WIDTH_CASE_PACKAGE_VERSION));
+                    //EditorGUILayout.LabelField("This", EditorStyles.boldLabel, GUILayout.Width(WIDTH_CASE_PACKAGE_VERSION));
+                    EditorGUILayout.LabelField("This", EditorStyles.boldLabel);
+                    EditorGUILayout.LabelField("Update", EditorStyles.boldLabel, GUILayout.Width(WIDTH_CASE_UPDATE_BUTTON));
                     EditorGUILayout.EndHorizontal();
 
                     scrollPosPackages = EditorGUILayout.BeginScrollView(scrollPosPackages);
                     foreach (PackageManifestItem package in primaryPackageList)
                     {
                         string localPackageVersion = FindPackageVersionInThis(package.packageName);
+                        bool isVersionMissing = false;
                         bool isVersionValid = localPackageVersion.Equals(package.packageVersion);
+                        if (!isVersionValid)
+                        {
+                            isVersionMissing = localPackageVersion.Equals(STR_MISSING_PACKAGE);
+                        }
 
                         EditorGUILayout.BeginHorizontal();
-                        EditorGUILayout.LabelField(package.packageName, GUILayout.Width(WIDTH_CASE_PACKAGE * 3));
-                        EditorGUILayout.LabelField(package.packageVersion, GUILayout.Width(WIDTH_CASE_PACKAGE));
-                        EditorGUILayout.LabelField(localPackageVersion, isVersionValid ? validStyle : wrongStyle, GUILayout.Width(WIDTH_CASE_PACKAGE));
+                        EditorGUILayout.LabelField(package.packageName, GUILayout.Width(WIDTH_CASE_PACKAGE_NAME));
+                        EditorGUILayout.LabelField(package.packageVersion, GUILayout.Width(WIDTH_CASE_PACKAGE_VERSION));
+                        GUIStyle style = isVersionValid ? validStyle : (isVersionMissing ? missingStyle : wrongStyle);
+                        //EditorGUILayout.LabelField(localPackageVersion, style, GUILayout.Width(WIDTH_CASE_PACKAGE_VERSION));
+                        EditorGUILayout.LabelField(localPackageVersion, style);
 
                         if (isVersionValid)
                         {
-                            GUILayout.Label("------", GUILayout.Width(WIDTH_CASE_PACKAGE));
+                            GUILayout.Label("------", GUILayout.Width(WIDTH_CASE_UPDATE_BUTTON));
                         }
                         else
                         {
-                            if (GUILayout.Button("Update", GUILayout.Width(WIDTH_CASE_PACKAGE)))
+                            if (GUILayout.Button("Update", GUILayout.Width(WIDTH_CASE_UPDATE_BUTTON)))
                             {
                                 UpdatePackage(package.packageName, package.packageVersion);
                             }
@@ -200,9 +221,9 @@ namespace MachinMachines
 
             private string FindPackageVersionInThis(string _packageName)
             {
-                PackageManifestItem tpmPackage = thisPackageList.First(t => t.packageName == _packageName);
+                PackageManifestItem tpmPackage = thisPackageList.FirstOrDefault(t => t.packageName == _packageName);
 
-                return tpmPackage != null ? tpmPackage.packageVersion : "missing";
+                return tpmPackage != null ? tpmPackage.packageVersion : STR_MISSING_PACKAGE;
             }
 
             private void SynchronizeLocalPackages()
@@ -225,30 +246,30 @@ namespace MachinMachines
                 {
                     //Display Headers
                     EditorGUILayout.BeginHorizontal();
-                    EditorGUILayout.LabelField("File name", EditorStyles.boldLabel, GUILayout.Width(WIDTH_CASE_PACKAGE * 3));
-                    EditorGUILayout.LabelField("", EditorStyles.boldLabel, GUILayout.Width(WIDTH_CASE_PACKAGE));
-                    EditorGUILayout.LabelField("", EditorStyles.boldLabel, GUILayout.Width(WIDTH_CASE_PACKAGE));
-                    EditorGUILayout.LabelField("Update", EditorStyles.boldLabel, GUILayout.Width(WIDTH_CASE_PACKAGE));
+                    EditorGUILayout.LabelField("File name", EditorStyles.boldLabel, GUILayout.Width(WIDTH_CASE_PROJECT_SETTINGS));
+                    EditorGUILayout.LabelField("", EditorStyles.boldLabel, GUILayout.Width(WIDTH_CASE_PROJECT_SETTINGS));
+                    EditorGUILayout.LabelField("", EditorStyles.boldLabel, GUILayout.Width(WIDTH_CASE_PROJECT_SETTINGS));
+                    EditorGUILayout.LabelField("Update", EditorStyles.boldLabel, GUILayout.Width(WIDTH_CASE_PROJECT_SETTINGS));
                     EditorGUILayout.EndHorizontal();
 
                     scrollPosProjectSettings = EditorGUILayout.BeginScrollView(scrollPosProjectSettings);
                     foreach (KeyValuePair<string, string> kvp in primaryProjectSettingFiles)
                     {
                         EditorGUILayout.BeginHorizontal();
-                        EditorGUILayout.LabelField(kvp.Key, GUILayout.Width(WIDTH_CASE_PACKAGE * 4));
+                        EditorGUILayout.LabelField(kvp.Key, GUILayout.Width(WIDTH_CASE_PROJECT_SETTINGS * 4));
                         //EditorGUILayout.LabelField(kvp.Value);
 
                         string checksumFromThis = FindLocalProjectSettingFile(kvp.Key);
                         bool isChecksumValid = kvp.Value.Equals(checksumFromThis);
-                        EditorGUILayout.LabelField(isChecksumValid ? "Up to date" : "Outdated", isChecksumValid ? validStyle : wrongStyle, GUILayout.Width(WIDTH_CASE_PACKAGE));
+                        EditorGUILayout.LabelField(isChecksumValid ? "Up to date" : "Outdated", isChecksumValid ? validStyle : wrongStyle, GUILayout.Width(WIDTH_CASE_PROJECT_SETTINGS));
 
                         if (isChecksumValid)
                         {
-                            GUILayout.Label("------", GUILayout.Width(WIDTH_CASE_PACKAGE));
+                            GUILayout.Label("------", GUILayout.Width(WIDTH_CASE_PROJECT_SETTINGS));
                         }
                         else
                         {
-                            if (GUILayout.Button("Update", GUILayout.Width(WIDTH_CASE_PACKAGE)))
+                            if (GUILayout.Button("Update", GUILayout.Width(WIDTH_CASE_PROJECT_SETTINGS)))
                             {
                                 UpdateSettingFile(kvp.Key);
                             }
