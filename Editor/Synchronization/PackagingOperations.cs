@@ -117,7 +117,7 @@ namespace MachinMachines
                     }
                     else if (_addRequest.Status >= StatusCode.Failure)
                     {
-                        Debug.Log(_addRequest.Error.message);
+                        Debug.LogError(_addRequest.Error.message);
                     }
                     isRunningAsyncOperation = false;
                     EditorApplication.update -= ProgressAddPackage;

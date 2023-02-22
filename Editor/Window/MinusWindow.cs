@@ -53,6 +53,8 @@ namespace MachinMachines
             public static readonly string SETTINGS_PRIMARY_PROJECT_PATH = "primaryProjectPath";
             private string tmpPrimaryProjectPath;
 
+            private bool isNeededRefreshAfterSync = false;
+
             /* Getters */
             public string PrimaryPackagesDirectory
             {
@@ -132,6 +134,15 @@ namespace MachinMachines
                 }
                 else
                 {
+                    if (isNeededRefreshAfterSync)
+                    {
+                        isNeededRefreshAfterSync = false;
+                        //GAB On appuie sur ReSync
+                        primaryPackageList = Synchronization.GetExternalPackagesList(PrimaryPackagesDirectory);
+                        thisPackageList = Synchronization.GetExternalPackagesList(ThisPackagesDirectory);
+                        primaryProjectSettingFiles = Synchronization.GetHashedFilesOfDirectory(PrimarySettingsDirectory);
+                        thisProjectSettingFiles = Synchronization.GetHashedFilesOfDirectory(ThisSettingsDirectory);
+                    }
                     //GROUP 3 : DISPLAY PACKAGES INFO
 
                     EditorGUILayout.BeginVertical("box");
@@ -215,6 +226,7 @@ namespace MachinMachines
             {
                 if (EditorUtility.DisplayDialog("Warning", "Do you really want to update the package " + packageName + "to version " + newVersion + " ? ", "Yes", "No"))
                 {
+                    isNeededRefreshAfterSync = true;
                     PackagingOperations.UpdatePackage(packageName, newVersion);
                 }
             }
