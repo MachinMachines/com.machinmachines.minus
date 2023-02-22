@@ -76,7 +76,8 @@ namespace MachinMachines
                         foreach (UnityEditor.PackageManager.PackageInfo pcInfo in _listRequest.Result)
                         {
                             //Debug.Log("package info : " + pcInfo.name + " / version : " + pcInfo.version);
-                            tmpPackageList.Add(new PackageManifestItem(pcInfo.name, pcInfo.version));
+                            //TODO GAB : the third parameter should be not this one
+                            tmpPackageList.Add(new PackageManifestItem(pcInfo.name, pcInfo.version, false));
                         }
                     }
                     else if (_listRequest.Status >= StatusCode.Failure)

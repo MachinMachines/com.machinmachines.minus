@@ -32,7 +32,13 @@ namespace MachinMachines
 
             private static readonly int WIDTH_CASE_PROJECT_SETTINGS = 100;            
 
-            private static readonly string STR_MISSING_PACKAGE = "missing";
+            private static readonly string STR_MISSING_PACKAGE = "none";
+
+            private static readonly string STR_NAME_PACKAGES_COLUMN = "Package Name";
+            private static readonly string STR_PRIMARY_PACKAGES_COLUMN = "Primary Project";
+            private static readonly string STR_THIS_PACKAGES_COLUMN = "This Project";
+            private static readonly string STR_UPDATE_PACKAGES_COLUMN = "Update";
+
 
             private List<PackageManifestItem> primaryPackageList;
             private List<PackageManifestItem> thisPackageList;
@@ -46,12 +52,16 @@ namespace MachinMachines
             private GUIStyle missingStyle;
             private bool showPackages;
             private Vector2 scrollPosPackages;
+            private bool showAssetPackages;
+            private Vector2 scrollPosAssetPackages;
             private bool showProjectSettings;
             private Vector2 scrollPosProjectSettings;
 
             /* settings */ 
             public static readonly string SETTINGS_PRIMARY_PROJECT_PATH = "primaryProjectPath";
+            public static readonly string SETTINGS_ASSETS_PACKAGES_PREFIX = "assetPackagePrefix";
             private string tmpPrimaryProjectPath;
+            private string tmpLocalPackagesPrefix;
 
             private bool isNeededRefreshAfterSync = false;
 
@@ -115,6 +125,11 @@ namespace MachinMachines
                     {
                         MinusSettings.instance.Set<string>(SETTINGS_PRIMARY_PROJECT_PATH, tmpPrimaryProjectPath, SettingsScope.Project);
                     }
+                    tmpLocalPackagesPrefix = EditorGUILayout.TextField("Asset Packages Prefix", MinusSettings.instance.Get<string>(SETTINGS_ASSETS_PACKAGES_PREFIX, SettingsScope.Project));
+                    if (EditorGUI.EndChangeCheck())
+                    {
+                        MinusSettings.instance.Set<string>(SETTINGS_ASSETS_PACKAGES_PREFIX, tmpLocalPackagesPrefix, SettingsScope.Project);
+                    }
                 }
                 EditorGUILayout.EndVertical();
 
@@ -122,10 +137,14 @@ namespace MachinMachines
                 if (GUILayout.Button("Synchronize"))
                 {
                     //SynchronizeLocalPackages();
-                    primaryPackageList = Synchronization.GetExternalPackagesList(PrimaryPackagesDirectory);
-                    thisPackageList = Synchronization.GetExternalPackagesList(ThisPackagesDirectory);
-                    primaryProjectSettingFiles = Synchronization.GetHashedFilesOfDirectory(PrimarySettingsDirectory);
-                    thisProjectSettingFiles = Synchronization.GetHashedFilesOfDirectory(ThisSettingsDirectory);
+                    if (!Directory.Exists(PrimaryPackagesDirectory))
+                    {
+                        EditorUtility.DisplayDialog("Minus Error", "Directory not found : " + PrimaryPackagesDirectory, "ok");
+                    }
+                    else
+                    {
+                        Synchronize();
+                    }
                 }
 
                 if (PackagingOperations.isRunningAsyncOperation)
@@ -137,11 +156,7 @@ namespace MachinMachines
                     if (isNeededRefreshAfterSync)
                     {
                         isNeededRefreshAfterSync = false;
-                        //GAB On appuie sur ReSync
-                        primaryPackageList = Synchronization.GetExternalPackagesList(PrimaryPackagesDirectory);
-                        thisPackageList = Synchronization.GetExternalPackagesList(ThisPackagesDirectory);
-                        primaryProjectSettingFiles = Synchronization.GetHashedFilesOfDirectory(PrimarySettingsDirectory);
-                        thisProjectSettingFiles = Synchronization.GetHashedFilesOfDirectory(ThisSettingsDirectory);
+                        Synchronize();
                     }
                     //GROUP 3 : DISPLAY PACKAGES INFO
 
@@ -149,7 +164,29 @@ namespace MachinMachines
                     showPackages = EditorGUILayout.Foldout(showPackages, "PACKAGES", EditorStyles.foldoutHeader);
                     if (showPackages)
                     {
-                        DisplayPackages();
+                        if (primaryPackageList != null && primaryPackageList.Count > 0)
+                        {
+                            DisplayPackages(primaryPackageList.Where(t => !t.isAsset), ref scrollPosPackages);
+                        }
+                        else
+                        {
+                            EditorGUILayout.LabelField("please synchronize first.");
+                        }
+                    }
+                    EditorGUILayout.EndVertical();
+
+                    EditorGUILayout.BeginVertical("box");
+                    showAssetPackages = EditorGUILayout.Foldout(showAssetPackages, "ASSET PACKAGES", EditorStyles.foldoutHeader);
+                    if (showAssetPackages)
+                    {
+                        if (primaryPackageList != null && primaryPackageList.Count > 0)
+                        {
+                            DisplayPackages(primaryPackageList.Where(t => t.isAsset), ref scrollPosAssetPackages);
+                        }
+                        else
+                        {
+                            EditorGUILayout.LabelField("please synchronize first.");
+                        }
                     }
                     EditorGUILayout.EndVertical();
 
@@ -165,26 +202,33 @@ namespace MachinMachines
                 }
             }
 
+            private void Synchronize() 
+            {
+                //SynchronizeLocalPackages();
+                primaryPackageList = Synchronization.GetExternalPackagesList(PrimaryPackagesDirectory, MinusSettings.instance.Get<string>(SETTINGS_ASSETS_PACKAGES_PREFIX, SettingsScope.Project));
+                thisPackageList = Synchronization.GetExternalPackagesList(ThisPackagesDirectory, MinusSettings.instance.Get<string>(SETTINGS_ASSETS_PACKAGES_PREFIX, SettingsScope.Project));
+                primaryProjectSettingFiles = Synchronization.GetHashedFilesOfDirectory(PrimarySettingsDirectory);
+                thisProjectSettingFiles = Synchronization.GetHashedFilesOfDirectory(ThisSettingsDirectory);
+            }
             /**
              *  PACKAGE MANAGEMENT
              */
 
-            private void DisplayPackages()
+            private void DisplayPackages(IEnumerable<PackageManifestItem> _primaryList, ref Vector2 _scrollPos)
             {
                 //Display Each Package
-                if (primaryPackageList != null && primaryPackageList.Count > 0 && thisPackageList != null && thisPackageList.Count > 0)
+                if (_primaryList != null && thisPackageList != null && thisPackageList.Count > 0)
                 {
                     //Display Headers
                     EditorGUILayout.BeginHorizontal();
-                    EditorGUILayout.LabelField("Package name", EditorStyles.boldLabel, GUILayout.Width(WIDTH_CASE_PACKAGE_NAME));
-                    EditorGUILayout.LabelField("Primary", EditorStyles.boldLabel, GUILayout.Width(WIDTH_CASE_PACKAGE_VERSION));
-                    //EditorGUILayout.LabelField("This", EditorStyles.boldLabel, GUILayout.Width(WIDTH_CASE_PACKAGE_VERSION));
-                    EditorGUILayout.LabelField("This", EditorStyles.boldLabel);
-                    EditorGUILayout.LabelField("Update", EditorStyles.boldLabel, GUILayout.Width(WIDTH_CASE_UPDATE_BUTTON));
+                    EditorGUILayout.LabelField ( STR_NAME_PACKAGES_COLUMN, EditorStyles.boldLabel, GUILayout.Width(WIDTH_CASE_PACKAGE_NAME));
+                    EditorGUILayout.LabelField ( STR_PRIMARY_PACKAGES_COLUMN, EditorStyles.boldLabel, GUILayout.Width(WIDTH_CASE_PACKAGE_VERSION));
+                    EditorGUILayout.LabelField ( STR_THIS_PACKAGES_COLUMN, EditorStyles.boldLabel);
+                    EditorGUILayout.LabelField ( STR_UPDATE_PACKAGES_COLUMN, EditorStyles.boldLabel, GUILayout.Width(WIDTH_CASE_UPDATE_BUTTON));
                     EditorGUILayout.EndHorizontal();
 
-                    scrollPosPackages = EditorGUILayout.BeginScrollView(scrollPosPackages);
-                    foreach (PackageManifestItem package in primaryPackageList)
+                    _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos);
+                    foreach (PackageManifestItem package in _primaryList)
                     {
                         string localPackageVersion = FindPackageVersionInThis(package.packageName);
                         bool isVersionMissing = false;

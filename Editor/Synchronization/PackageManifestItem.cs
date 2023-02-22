@@ -21,12 +21,14 @@ namespace MachinMachines
         {
             public string packageName;
             public string packageVersion;
+            public bool isAsset;
             public bool selected = true;
 
-            public PackageManifestItem(string _packageName, string _packageVersion)
+            public PackageManifestItem(string _packageName, string _packageVersion, bool _isAsset)
             {
                 this.packageName = _packageName;
                 this.packageVersion = _packageVersion;
+                this.isAsset = _isAsset;
             }
         }
     }

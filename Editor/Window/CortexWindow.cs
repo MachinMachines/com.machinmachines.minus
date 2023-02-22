@@ -63,7 +63,7 @@ namespace MachinMachines
             public static void ShowWindow()
             {
                 instance = (CortexWindow)EditorWindow.GetWindow(typeof(CortexWindow), false, "Cortex - MachinMachines");
-                instance.LaunchSync();
+                //instance.LaunchSync();
             }
 
             public void OnEnable()
@@ -333,11 +333,13 @@ namespace MachinMachines
                 CallNextStep();
             }
 
+            /*
             private void LaunchSync()
             {
                 packageList = null;
                 packageList = Synchronization.GetExternalPackagesList(Directory.GetCurrentDirectory() + "/Packages");
             }
+            */
         }
     }
 }
