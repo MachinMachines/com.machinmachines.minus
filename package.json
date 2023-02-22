@@ -1,7 +1,7 @@
 {
   "name": "com.machinmachines.minus",
   "displayName": "MachinMachines Minus",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "unity": "2021.3",
   "description": "MachinMachines Minus : Synchronisation between one Primary Project and mutliple Secondary projects",
   "dependencies": {
