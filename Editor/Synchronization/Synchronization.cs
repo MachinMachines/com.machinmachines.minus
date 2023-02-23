@@ -52,6 +52,8 @@ namespace MachinMachines
 
             public static List<PackageManifestItem> GetExternalPackagesList(string packageDirectory, string assetPrefix)
             {
+                bool hasAssetPrefix = !String.IsNullOrEmpty(assetPrefix);
+
                 List<PackageManifestItem> packageList = new List<PackageManifestItem>();
                 string strLine;
 
@@ -77,7 +79,8 @@ namespace MachinMachines
                             string package = matches[0].Groups[1].Value;
                             string version = matches[0].Groups[2].Value;
 
-                            packageList.Add(new PackageManifestItem(package, version, package.IndexOf(assetPrefix) == 0));
+                            //si l'assetprefix n'est pas renseigné ce n'est forcément pas un asset
+                            packageList.Add(new PackageManifestItem(package, version, hasAssetPrefix ? package.IndexOf(assetPrefix) == 0 : false));
                         }
                     }
                 }

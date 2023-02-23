@@ -60,20 +60,20 @@ namespace MachinMachines
             /* settings */ 
             public static readonly string SETTINGS_PRIMARY_PROJECT_PATH = "primaryProjectPath";
             public static readonly string SETTINGS_ASSETS_PACKAGES_PREFIX = "assetPackagePrefix";
-            private string tmpPrimaryProjectPath;
-            private string tmpLocalPackagesPrefix;
+            private string primaryProjectPath;
+            private string localPackagesPrefix;
 
             private bool isNeededRefreshAfterSync = false;
 
             /* Getters */
             public string PrimaryPackagesDirectory
             {
-                get { return MinusSettings.instance.Get<string>(SETTINGS_PRIMARY_PROJECT_PATH, SettingsScope.Project) + "/Packages"; }
+                get { return primaryProjectPath + "/Packages"; }
             }
 
             public string PrimarySettingsDirectory
             {
-                get { return MinusSettings.instance.Get<string>(SETTINGS_PRIMARY_PROJECT_PATH, SettingsScope.Project) + "/ProjectSettings"; }
+                get { return primaryProjectPath + "/ProjectSettings"; }
             }
 
             public string ThisPackagesDirectory
@@ -103,6 +103,9 @@ namespace MachinMachines
 
             private void Init()
             {
+                primaryProjectPath = MinusSettings.instance.Get<string>(SETTINGS_PRIMARY_PROJECT_PATH, SettingsScope.User);
+                localPackagesPrefix = MinusSettings.instance.Get<string>(SETTINGS_ASSETS_PACKAGES_PREFIX, SettingsScope.Project);
+
                 //styles
                 validStyle = new GUIStyle(EditorStyles.label);
                 validStyle.normal.textColor = Color.green;
@@ -120,15 +123,15 @@ namespace MachinMachines
                     EditorGUILayout.LabelField("PROPERTIES", EditorStyles.boldLabel);
 
                     EditorGUI.BeginChangeCheck();
-                    tmpPrimaryProjectPath = EditorGUILayout.TextField("Primary Project Path", MinusSettings.instance.Get<string>(SETTINGS_PRIMARY_PROJECT_PATH, SettingsScope.Project));
+                    primaryProjectPath = EditorGUILayout.TextField("Primary Project Path", primaryProjectPath);
                     if (EditorGUI.EndChangeCheck())
                     {
-                        MinusSettings.instance.Set<string>(SETTINGS_PRIMARY_PROJECT_PATH, tmpPrimaryProjectPath, SettingsScope.Project);
+                        MinusSettings.instance.Set<string>(SETTINGS_PRIMARY_PROJECT_PATH, primaryProjectPath, SettingsScope.User);
                     }
-                    tmpLocalPackagesPrefix = EditorGUILayout.TextField("Asset Packages Prefix", MinusSettings.instance.Get<string>(SETTINGS_ASSETS_PACKAGES_PREFIX, SettingsScope.Project));
+                    localPackagesPrefix = EditorGUILayout.TextField("Asset Packages Prefix", localPackagesPrefix);
                     if (EditorGUI.EndChangeCheck())
                     {
-                        MinusSettings.instance.Set<string>(SETTINGS_ASSETS_PACKAGES_PREFIX, tmpLocalPackagesPrefix, SettingsScope.Project);
+                        MinusSettings.instance.Set<string>(SETTINGS_ASSETS_PACKAGES_PREFIX, localPackagesPrefix, SettingsScope.Project);
                     }
                 }
                 EditorGUILayout.EndVertical();
@@ -205,8 +208,8 @@ namespace MachinMachines
             private void Synchronize() 
             {
                 //SynchronizeLocalPackages();
-                primaryPackageList = Synchronization.GetExternalPackagesList(PrimaryPackagesDirectory, MinusSettings.instance.Get<string>(SETTINGS_ASSETS_PACKAGES_PREFIX, SettingsScope.Project));
-                thisPackageList = Synchronization.GetExternalPackagesList(ThisPackagesDirectory, MinusSettings.instance.Get<string>(SETTINGS_ASSETS_PACKAGES_PREFIX, SettingsScope.Project));
+                primaryPackageList = Synchronization.GetExternalPackagesList(PrimaryPackagesDirectory, localPackagesPrefix);
+                thisPackageList = Synchronization.GetExternalPackagesList(ThisPackagesDirectory, localPackagesPrefix);
                 primaryProjectSettingFiles = Synchronization.GetHashedFilesOfDirectory(PrimarySettingsDirectory);
                 thisProjectSettingFiles = Synchronization.GetHashedFilesOfDirectory(ThisSettingsDirectory);
             }
@@ -217,7 +220,7 @@ namespace MachinMachines
             private void DisplayPackages(IEnumerable<PackageManifestItem> _primaryList, ref Vector2 _scrollPos)
             {
                 //Display Each Package
-                if (_primaryList != null && thisPackageList != null && thisPackageList.Count > 0)
+                if (_primaryList != null && _primaryList.ToList().Count > 0 && thisPackageList != null && thisPackageList.Count > 0)
                 {
                     //Display Headers
                     EditorGUILayout.BeginHorizontal();
@@ -242,7 +245,6 @@ namespace MachinMachines
                         EditorGUILayout.LabelField(package.packageName, GUILayout.Width(WIDTH_CASE_PACKAGE_NAME));
                         EditorGUILayout.LabelField(package.packageVersion, GUILayout.Width(WIDTH_CASE_PACKAGE_VERSION));
                         GUIStyle style = isVersionValid ? validStyle : (isVersionMissing ? missingStyle : wrongStyle);
-                        //EditorGUILayout.LabelField(localPackageVersion, style, GUILayout.Width(WIDTH_CASE_PACKAGE_VERSION));
                         EditorGUILayout.LabelField(localPackageVersion, style);
 
                         if (isVersionValid)
@@ -262,7 +264,7 @@ namespace MachinMachines
                 }
                 else
                 {
-                    EditorGUILayout.LabelField("please synchronize first.");
+                    EditorGUILayout.LabelField("no packages.");
                 }
             }
 
@@ -302,9 +304,8 @@ namespace MachinMachines
                 {
                     //Display Headers
                     EditorGUILayout.BeginHorizontal();
-                    EditorGUILayout.LabelField("File name", EditorStyles.boldLabel, GUILayout.Width(WIDTH_CASE_PROJECT_SETTINGS));
-                    EditorGUILayout.LabelField("", EditorStyles.boldLabel, GUILayout.Width(WIDTH_CASE_PROJECT_SETTINGS));
-                    EditorGUILayout.LabelField("", EditorStyles.boldLabel, GUILayout.Width(WIDTH_CASE_PROJECT_SETTINGS));
+                    EditorGUILayout.LabelField("File name", EditorStyles.boldLabel, GUILayout.Width(WIDTH_CASE_PACKAGE_NAME));
+                    EditorGUILayout.LabelField("State", EditorStyles.boldLabel, GUILayout.Width(WIDTH_CASE_PROJECT_SETTINGS));
                     EditorGUILayout.LabelField("Update", EditorStyles.boldLabel, GUILayout.Width(WIDTH_CASE_PROJECT_SETTINGS));
                     EditorGUILayout.EndHorizontal();
 
@@ -312,7 +313,7 @@ namespace MachinMachines
                     foreach (KeyValuePair<string, string> kvp in primaryProjectSettingFiles)
                     {
                         EditorGUILayout.BeginHorizontal();
-                        EditorGUILayout.LabelField(kvp.Key, GUILayout.Width(WIDTH_CASE_PROJECT_SETTINGS * 4));
+                        EditorGUILayout.LabelField(kvp.Key, GUILayout.Width(WIDTH_CASE_PACKAGE_NAME));
                         //EditorGUILayout.LabelField(kvp.Value);
 
                         string checksumFromThis = FindLocalProjectSettingFile(kvp.Key);
