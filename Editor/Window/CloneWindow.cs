@@ -134,15 +134,18 @@ namespace MachinMachines
 
                     if (GUILayout.Button("CLONE"))
                     {
-                        try
+                        //TODO GAB
+                        //try
                         {
                             CreateProject(projectPath, packageList);
                             this.Close();
                         }
+                        /*
                         catch (Exception e)
                         {
                             EditorUtility.DisplayDialog("Minus", "ERROR : " + e.Message, "OK");
                         }
+                        */
                     }
 
                 }
@@ -203,15 +206,16 @@ namespace MachinMachines
                 Directory.CreateDirectory(newFolder);
 
                 //Create empty Assets Folder
-                Directory.CreateDirectory(newFolder + "/" + assetsPath);
+
+                Directory.CreateDirectory(Path.Combine(newFolder, assetsPath));
 
                 //Copy Packages
-                FileUtil.CopyFileOrDirectory(Directory.GetCurrentDirectory() + "/" + PackagesPath,
-                                             newFolder + "/" + PackagesPath);
+                FileUtil.CopyFileOrDirectory(Path.Combine(Directory.GetCurrentDirectory(),PackagesPath),
+                                             Path.Combine(newFolder,PackagesPath));
 
                 //Copy ProjectSettings
-                FileUtil.CopyFileOrDirectory(Directory.GetCurrentDirectory() + "/" + projectSettingsPath,
-                                             newFolder + "/" + projectSettingsPath);
+                FileUtil.CopyFileOrDirectory(Path.Combine(Directory.GetCurrentDirectory(),projectSettingsPath),
+                                             Path.Combine(newFolder,projectSettingsPath));
 
                 //Copy Other Folders
                 if (!string.IsNullOrEmpty(foldersToCopy))
@@ -219,8 +223,12 @@ namespace MachinMachines
                     foreach (string strFolder in foldersToCopy.Split(foldersToCopy, ','))
                     {
                         string tmpFolder = strFolder.Trim();
-                        FileUtil.CopyFileOrDirectory(Directory.GetCurrentDirectory() + "/" + tmpFolder,
-                                 newFolder + "/" + tmpFolder);
+                        string localFolderInAssets = Path.Combine(Directory.GetCurrentDirectory(), assetsPath, tmpFolder);
+                        if (!string.IsNullOrEmpty(tmpFolder) && Directory.Exists(localFolderInAssets))
+                        {
+                            FileUtil.CopyFileOrDirectory(localFolderInAssets, 
+                                                         Path.Combine(newFolder, assetsPath,tmpFolder));
+                        }
                     }
                 }
 
