@@ -18,7 +18,6 @@ using System.IO;
 using System.Linq;
 
 using UnityEditor;
-
 using UnityEngine;
 
 namespace MachinMachines
@@ -40,35 +39,30 @@ namespace MachinMachines
             private int currentStep = -1;
 
             private readonly string SETTINGNAME_ALLOWPACKAGE = "allowLocalPackages";
+            private readonly string SETTINGNAME_LOCALFOLDERS = "localFolders";
             private bool tmpAllowPackages;
-
-            private string tmpCortexPath;
-
+            private string tmpPrimaryPath;
             private List<PackageManifestItem> tmpPackagesToClone;
+            private string foldersToCopy;
 
             /* from clone window*/
             private static string projectPath;
-
             private List<PackageManifestItem> packageList;
-
             private Vector2 scrollPosPackages;
-
             private bool showPackages = false;
-
             private static CortexWindow instance;
-
-            /* from clone window*/
 
             [MenuItem("MachinMachines/Minus/Create New Project...")]
             public static void ShowWindow()
             {
-                instance = (CortexWindow)EditorWindow.GetWindow(typeof(CortexWindow), false, "Cortex - MachinMachines");
-                //instance.LaunchSync();
+               instance = (CortexWindow)EditorWindow.GetWindow(typeof(CortexWindow), false, "Cortex - MachinMachines");
+               instance.LaunchSync();
             }
 
             public void OnEnable()
             {
                 tmpAllowPackages = MinusSettings.instance.Get<bool>(SETTINGNAME_ALLOWPACKAGE, SettingsScope.Project);
+                foldersToCopy = MinusSettings.instance.Get<string>(SETTINGNAME_LOCALFOLDERS, SettingsScope.Project);
                 Init();
             }
 
@@ -86,11 +80,18 @@ namespace MachinMachines
                         MinusSettings.instance.Set<bool>(SETTINGNAME_ALLOWPACKAGE, tmpAllowPackages, SettingsScope.Project);
                     }
 
-                    EditorGUILayout.LabelField("Project Path : ");
-                    projectPath = EditorGUILayout.TextField(projectPath);
+                    EditorGUI.BeginChangeCheck();
+                    foldersToCopy = EditorGUILayout.TextField(new GUIContent("Folders To Copy", "Folders To Copy to new project, please separate them with a comma"), foldersToCopy);
+                    if (EditorGUI.EndChangeCheck())
+                    {
+                        MinusSettings.instance.Set<string>(SETTINGNAME_LOCALFOLDERS, foldersToCopy, SettingsScope.Project);
+                    }
 
                     EditorGUILayout.EndVertical();
                 }
+
+                EditorGUILayout.LabelField("Project Path : ");
+                projectPath = EditorGUILayout.TextField(projectPath);
 
 
                 //Display Each Package
@@ -149,15 +150,6 @@ namespace MachinMachines
                 {
                     EditorGUILayout.LabelField("please wait...");
                 }
-
-
-
-                /*
-                if (GUILayout.Button("Create new Project"))
-                {
-                    CloneWindow.ShowWindow("select path to the new project : ", CreateProject);
-                }
-                */
             }
 
             private void Init()
@@ -221,6 +213,17 @@ namespace MachinMachines
                 FileUtil.CopyFileOrDirectory(Directory.GetCurrentDirectory() + "/" + projectSettingsPath,
                                              newFolder + "/" + projectSettingsPath);
 
+                //Copy Other Folders
+                if (!string.IsNullOrEmpty(foldersToCopy))
+                {
+                    foreach (string strFolder in foldersToCopy.Split(foldersToCopy, ','))
+                    {
+                        string tmpFolder = strFolder.Trim();
+                        FileUtil.CopyFileOrDirectory(Directory.GetCurrentDirectory() + "/" + tmpFolder,
+                                 newFolder + "/" + tmpFolder);
+                    }
+                }
+
                 CallNextStep();
             }
 
@@ -232,11 +235,6 @@ namespace MachinMachines
                 }
 
                 newFolder = newFolder.Replace("\\", "/");
-
-                if (Directory.Exists(newFolder))
-                {
-                    throw new Exception("the folder " + newFolder + " exists already, please delete it and retry.");
-                }
 
                 if (EditorUtility.DisplayDialog("Info", "Do you really want to create a new project on this path : " + newFolder + " ?", "Yes", "No"))
                 {
@@ -263,7 +261,7 @@ namespace MachinMachines
 
                     if (hasAtLeastOneLocalPackage)
                     {
-                        if (EditorUtility.DisplayDialog("Warning", "Warning : some packages are local, it is strongly discouraged to have local packages deployed in a secondary project.", "I'll do it anyway", "cancel"))
+                        if (EditorUtility.DisplayDialog("Warning", "Warning : some packages are local, do you really want to duplicate the project with plocal packages ?", "I'll do it anyway", "cancel"))
                         {
                             CallNextStep();
                         }
@@ -312,15 +310,13 @@ namespace MachinMachines
                 }
 
                 allLines.RemoveAll(x => string.IsNullOrWhiteSpace(x));
-
                 File.WriteAllLines(newManifestJson, allLines);
-
                 CallNextStep();
             }
 
             private void SetupMinusSettings()
             {
-                tmpCortexPath = MinusSettings.instance.Get<string>(MinusWindow.SETTINGS_PRIMARY_PROJECT_PATH, SettingsScope.Project);
+                tmpPrimaryPath = MinusSettings.instance.Get<string>(MinusWindow.SETTINGS_PRIMARY_PROJECT_PATH, SettingsScope.Project);
                 MinusSettings.instance.Set<string>(MinusWindow.SETTINGS_PRIMARY_PROJECT_PATH, Directory.GetCurrentDirectory(), SettingsScope.Project);
 
                 CallNextStep();
@@ -328,18 +324,16 @@ namespace MachinMachines
 
             private void RestoreMinusSettings()
             {
-                MinusSettings.instance.Set<string>(MinusWindow.SETTINGS_PRIMARY_PROJECT_PATH, tmpCortexPath, SettingsScope.Project);
+                MinusSettings.instance.Set<string>(MinusWindow.SETTINGS_PRIMARY_PROJECT_PATH, tmpPrimaryPath, SettingsScope.Project);
 
                 CallNextStep();
             }
 
-            /*
             private void LaunchSync()
             {
                 packageList = null;
-                packageList = Synchronization.GetExternalPackagesList(Directory.GetCurrentDirectory() + "/Packages");
+                packageList = Synchronization.GetExternalPackagesList(Directory.GetCurrentDirectory() + "/Packages", "");
             }
-            */
         }
     }
 }
