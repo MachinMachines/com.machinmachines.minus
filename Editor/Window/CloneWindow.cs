@@ -24,7 +24,7 @@ namespace MachinMachines
 {
     namespace Minus
     {
-        public class CortexWindow : EditorWindow
+        public class CloneWindow : EditorWindow
         {
             //constants
             private static readonly string assetsPath = "Assets";
@@ -50,12 +50,12 @@ namespace MachinMachines
             private List<PackageManifestItem> packageList;
             private Vector2 scrollPosPackages;
             private bool showPackages = false;
-            private static CortexWindow instance;
+            private static CloneWindow instance;
 
             [MenuItem("MachinMachines/Minus/Create New Project...")]
             public static void ShowWindow()
             {
-               instance = (CortexWindow)EditorWindow.GetWindow(typeof(CortexWindow), false, "Cortex - MachinMachines");
+               instance = (CloneWindow)EditorWindow.GetWindow(typeof(CloneWindow), false, "Minus - Clone Window");
                instance.LaunchSync();
             }
 
@@ -284,7 +284,6 @@ namespace MachinMachines
 
             private void ProcessPackageManifest()
             {
-                //Dans le Package manifest.json, retirer la ligne com.machinmachines.cortex et rajouter la ligne com.machinmachines.minus
                 string newManifestJson = newFolder + "/Packages/manifest.json";
 
                 List<string> allLines = new List<string>(File.ReadAllLines(newManifestJson));
