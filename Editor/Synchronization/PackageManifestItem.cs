@@ -19,16 +19,60 @@ namespace MachinMachines
         [System.Serializable]
         public class PackageManifestItem
         {
-            public string packageName;
-            public string packageVersion;
-            public bool isAsset;
             public bool selected = true;
+
+            private readonly string m_packageName;
+            public string packageName
+            {
+                get
+                {
+                    return m_packageName;
+                }
+            }
+
+            private readonly string m_packageVersion;
+            public string packageVersion
+            {
+                get
+                {
+                    return m_packageVersion;
+                }
+            }
+
+
+            private readonly bool m_isAsset;
+            public bool isAsset
+            {
+                get
+                {
+                    return m_isAsset;
+                }
+            }
+
+            private readonly string m_scope;
+            public string scope
+            {
+                get
+                {
+                    return m_scope;
+                }
+            }
+
+            private static readonly char SCOPE_SEPARATOR = '.';
 
             public PackageManifestItem(string _packageName, string _packageVersion, bool _isAsset)
             {
-                this.packageName = _packageName;
-                this.packageVersion = _packageVersion;
-                this.isAsset = _isAsset;
+                this.m_packageName = _packageName;
+                this.m_packageVersion = _packageVersion;
+                this.m_isAsset = _isAsset;
+
+                //scope determination (the "com.unity" in "com.unity.timeline")
+                this.m_scope = _packageName;
+                int lastIndexScopeSeparator = _packageName.LastIndexOf(SCOPE_SEPARATOR);
+                if (lastIndexScopeSeparator != -1)
+                {
+                    this.m_scope = _packageName.Substring(0, lastIndexScopeSeparator);
+                }
             }
         }
     }

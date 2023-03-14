@@ -41,6 +41,7 @@ namespace MachinMachines
             private readonly string SETTINGNAME_ALLOWPACKAGE = "allowLocalPackages";
             private readonly string SETTINGNAME_LOCALFOLDERS = "localFolders";
             private bool tmpAllowPackages;
+            private bool posGroupEnabled;
             private string tmpPrimaryPath;
             private List<PackageManifestItem> tmpPackagesToClone;
             private string foldersToCopy;
@@ -51,6 +52,9 @@ namespace MachinMachines
             private Vector2 scrollPosPackages;
             private bool showPackages = false;
             private static CloneWindow instance;
+
+            /* for interface*/
+            Dictionary<string, bool> groupKeyDict;
 
             [MenuItem("MachinMachines/Minus/Create New Project...")]
             public static void ShowWindow()
@@ -121,6 +125,8 @@ namespace MachinMachines
                         EditorGUILayout.EndHorizontal();
 
                         scrollPosPackages = EditorGUILayout.BeginScrollView(scrollPosPackages);
+                        //posGroupEnabled = EditorGUILayout.BeginToggleGroup("Test", posGroupEnabled);
+                        /*
                         foreach (PackageManifestItem package in packageList)
                         {
                             EditorGUILayout.BeginHorizontal();
@@ -129,6 +135,31 @@ namespace MachinMachines
                             EditorGUILayout.LabelField(package.packageVersion, GUILayout.Width(WIDTH_CASE_PACKAGE));
                             EditorGUILayout.EndHorizontal();
                         }
+                        //EditorGUILayout.EndToggleGroup();
+                        */
+
+                        var groups = packageList.GroupBy(x => x.scope);
+                        foreach (var group in groups)
+                        {
+                            bool groupEnabled = true;
+                            //groupEnabled = EditorGUILayout.Foldout(groupEnabled, group.Key, EditorStyles.foldoutHeader);
+                            EditorGUILayout.Toggle(group.Key, groupEnabled));
+                            /*
+                            if (groupEnabled)
+                            {
+                            */
+                                foreach (PackageManifestItem package in group)
+                                {
+                                    EditorGUILayout.BeginHorizontal();
+                                    package.selected = EditorGUILayout.Toggle(package.selected, GUILayout.Width(WIDTH_CASE_TOGGLE));
+                                    EditorGUILayout.LabelField(package.packageName, GUILayout.Width(WIDTH_CASE_PACKAGE));
+                                    EditorGUILayout.LabelField(package.packageVersion, GUILayout.Width(WIDTH_CASE_PACKAGE));
+                                    EditorGUILayout.EndHorizontal();
+                                }
+                            //}
+                            //EditorGUILayout.EndToggleGroup();
+                        }
+
                         EditorGUILayout.EndScrollView();
                     }
 
