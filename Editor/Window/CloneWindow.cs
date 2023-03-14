@@ -125,30 +125,23 @@ namespace MachinMachines
                         EditorGUILayout.EndHorizontal();
 
                         scrollPosPackages = EditorGUILayout.BeginScrollView(scrollPosPackages);
-                        //posGroupEnabled = EditorGUILayout.BeginToggleGroup("Test", posGroupEnabled);
-                        /*
-                        foreach (PackageManifestItem package in packageList)
-                        {
-                            EditorGUILayout.BeginHorizontal();
-                            package.selected = EditorGUILayout.Toggle(package.selected, GUILayout.Width(WIDTH_CASE_TOGGLE));
-                            EditorGUILayout.LabelField(package.packageName, GUILayout.Width(WIDTH_CASE_PACKAGE));
-                            EditorGUILayout.LabelField(package.packageVersion, GUILayout.Width(WIDTH_CASE_PACKAGE));
-                            EditorGUILayout.EndHorizontal();
-                        }
-                        //EditorGUILayout.EndToggleGroup();
-                        */
 
                         var groups = packageList.GroupBy(x => x.scope);
                         foreach (var group in groups)
                         {
-                            bool groupEnabled = true;
-                            //groupEnabled = EditorGUILayout.Foldout(groupEnabled, group.Key, EditorStyles.foldoutHeader);
-                            EditorGUILayout.Toggle(group.Key, groupEnabled));
-                            /*
-                            if (groupEnabled)
+                            EditorGUILayout.BeginVertical("box");
+                            EditorGUILayout.BeginHorizontal();
+                            EditorGUILayout.LabelField(group.Key, EditorStyles.boldLabel, GUILayout.Width(WIDTH_CASE_PACKAGE));
+                            if (GUILayout.Button("select", GUILayout.Width(WIDTH_CASE_BUTTON)))
                             {
-                            */
-                                foreach (PackageManifestItem package in group)
+                                foreach (PackageManifestItem package in group) package.selected = true;
+                            }
+                            if (GUILayout.Button("deselect", GUILayout.Width(WIDTH_CASE_BUTTON)))
+                            {
+                                foreach (PackageManifestItem package in group) package.selected = false;
+                            }
+                            EditorGUILayout.EndHorizontal();
+                            foreach (PackageManifestItem package in group)
                                 {
                                     EditorGUILayout.BeginHorizontal();
                                     package.selected = EditorGUILayout.Toggle(package.selected, GUILayout.Width(WIDTH_CASE_TOGGLE));
@@ -156,8 +149,7 @@ namespace MachinMachines
                                     EditorGUILayout.LabelField(package.packageVersion, GUILayout.Width(WIDTH_CASE_PACKAGE));
                                     EditorGUILayout.EndHorizontal();
                                 }
-                            //}
-                            //EditorGUILayout.EndToggleGroup();
+                            EditorGUILayout.EndVertical();
                         }
 
                         EditorGUILayout.EndScrollView();
@@ -283,7 +275,7 @@ namespace MachinMachines
 
             private void CheckLocalPackages()
             {
-                if (!MinusSettings.instance.Get<bool>("allowLocalPackages", SettingsScope.Project))
+                if (!MinusSettings.instance.Get<bool>(SETTINGNAME_ALLOWPACKAGE, SettingsScope.Project))
                 {
                     string newManifestJson = Directory.GetCurrentDirectory() + "/Packages/manifest.json";
                     bool hasAtLeastOneLocalPackage = false;
