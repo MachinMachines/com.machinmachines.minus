@@ -30,6 +30,9 @@ namespace MachinMachines
             private static readonly string assetsPath = "Assets";
             private static readonly string projectSettingsPath = "ProjectSettings";
             private static readonly string PackagesPath = "Packages";
+            private static readonly string SETTINGNAME_ALLOWPACKAGE = "allowLocalPackages";
+            private static readonly string SETTINGNAME_LOCALFOLDERS = "localFolders";
+            private static readonly char SEPARATOR_FOLDERSTOCOPY = ',';
             private static readonly int WIDTH_CASE_TOGGLE = 20;
             private static readonly int WIDTH_CASE_PACKAGE = 300;
             private static readonly int WIDTH_CASE_BUTTON = 100;
@@ -38,8 +41,6 @@ namespace MachinMachines
             private string newFolder;
             private int currentStep = -1;
 
-            private readonly string SETTINGNAME_ALLOWPACKAGE = "allowLocalPackages";
-            private readonly string SETTINGNAME_LOCALFOLDERS = "localFolders";
             private bool tmpAllowPackages;
             private bool posGroupEnabled;
             private string tmpPrimaryPath;
@@ -53,8 +54,7 @@ namespace MachinMachines
             private bool showPackages = false;
             private static CloneWindow instance;
 
-            /* for interface*/
-            Dictionary<string, bool> groupKeyDict;
+
 
             [MenuItem("MachinMachines/Minus/Create New Project...")]
             public static void ShowWindow()
@@ -243,14 +243,15 @@ namespace MachinMachines
                 //Copy Other Folders
                 if (!string.IsNullOrEmpty(foldersToCopy))
                 {
-                    foreach (string strFolder in foldersToCopy.Split(foldersToCopy, ','))
+                    foreach (string strFolder in foldersToCopy.Split(SEPARATOR_FOLDERSTOCOPY))
                     {
                         string tmpFolder = strFolder.Trim();
                         string localFolderInAssets = Path.Combine(Directory.GetCurrentDirectory(), assetsPath, tmpFolder);
                         if (!string.IsNullOrEmpty(tmpFolder) && Directory.Exists(localFolderInAssets))
                         {
-                            FileUtil.CopyFileOrDirectory(localFolderInAssets, 
-                                                         Path.Combine(newFolder, assetsPath,tmpFolder));
+                            string newFolderToCopy = Path.Combine(newFolder, assetsPath, tmpFolder);
+                            //Debug.Log("copy file from : " + localFolderInAssets + " to " + newFolderToCopy);
+                            FileUtil.CopyFileOrDirectory(localFolderInAssets, newFolderToCopy);
                         }
                     }
                 }
