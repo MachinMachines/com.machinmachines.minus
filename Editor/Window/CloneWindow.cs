@@ -32,6 +32,9 @@ namespace MachinMachines
             private static readonly string PackagesPath = "Packages";
             private static readonly string SETTINGNAME_ALLOWPACKAGE = "allowLocalPackages";
             private static readonly string SETTINGNAME_LOCALFOLDERS = "localFolders";
+            private static readonly string STR_BUTTONCLONE = "CLONE";
+            private static readonly string STR_GITIGNOREFILE = ".gitignore";
+            private static readonly string STR_GITATTRIBUTESFILE = ".gitattributes";
             private static readonly char SEPARATOR_FOLDERSTOCOPY = ',';
             private static readonly int WIDTH_CASE_TOGGLE = 20;
             private static readonly int WIDTH_CASE_PACKAGE = 300;
@@ -151,11 +154,10 @@ namespace MachinMachines
                                 }
                             EditorGUILayout.EndVertical();
                         }
-
                         EditorGUILayout.EndScrollView();
                     }
 
-                    if (GUILayout.Button("CLONE"))
+                    if (GUILayout.Button(STR_BUTTONCLONE))
                     {
                         //TODO GAB
                         //try
@@ -170,7 +172,6 @@ namespace MachinMachines
                         }
                         */
                     }
-
                 }
                 else
                 {
@@ -255,6 +256,19 @@ namespace MachinMachines
                         }
                     }
                 }
+
+                //Copy .gitattributes and .gitignore if they exist
+                if (File.Exists(Path.Combine(Directory.GetCurrentDirectory(), STR_GITATTRIBUTESFILE)))
+                {
+                    FileUtil.CopyFileOrDirectory(Path.Combine(Directory.GetCurrentDirectory(), STR_GITATTRIBUTESFILE),
+                                                 Path.Combine(newFolder, STR_GITATTRIBUTESFILE));
+                }
+                if (File.Exists(Path.Combine(Directory.GetCurrentDirectory(), STR_GITIGNOREFILE)))
+                {
+                    FileUtil.CopyFileOrDirectory(Path.Combine(Directory.GetCurrentDirectory(), STR_GITIGNOREFILE),
+                                                 Path.Combine(newFolder, STR_GITIGNOREFILE));
+                }
+
 
                 CallNextStep();
             }
