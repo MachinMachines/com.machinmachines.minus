@@ -377,7 +377,7 @@ namespace MachinMachines
             private void LaunchSync()
             {
                 packageList = null;
-                packageList = Synchronization.GetExternalPackagesList(Directory.GetCurrentDirectory() + "/Packages", "");
+                packageList = Synchronization.GetExternalPackagesList(Directory.GetCurrentDirectory() + "/Packages");
             }
         }
     }
