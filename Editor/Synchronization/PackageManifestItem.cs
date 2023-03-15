@@ -39,16 +39,6 @@ namespace MachinMachines
                 }
             }
 
-
-            private readonly bool m_isAsset;
-            public bool isAsset
-            {
-                get
-                {
-                    return m_isAsset;
-                }
-            }
-
             private readonly string m_scope;
             public string scope
             {
@@ -60,11 +50,10 @@ namespace MachinMachines
 
             private static readonly char SCOPE_SEPARATOR = '.';
 
-            public PackageManifestItem(string _packageName, string _packageVersion, bool _isAsset)
+            public PackageManifestItem(string _packageName, string _packageVersion)
             {
                 this.m_packageName = _packageName;
                 this.m_packageVersion = _packageVersion;
-                this.m_isAsset = _isAsset;
 
                 //scope determination (the "com.unity" in "com.unity.timeline")
                 this.m_scope = _packageName;

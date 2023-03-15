@@ -61,7 +61,6 @@ namespace MachinMachines
             public static readonly string SETTINGS_PRIMARY_PROJECT_PATH = "primaryProjectPath";
             public static readonly string SETTINGS_ASSETS_PACKAGES_PREFIX = "assetPackagePrefix";
             private string primaryProjectPath;
-            private string localPackagesPrefix;
 
             private bool isNeededRefreshAfterSync = false;
 
@@ -104,7 +103,6 @@ namespace MachinMachines
             private void Init()
             {
                 primaryProjectPath = MinusSettings.instance.Get<string>(SETTINGS_PRIMARY_PROJECT_PATH, SettingsScope.User);
-                localPackagesPrefix = MinusSettings.instance.Get<string>(SETTINGS_ASSETS_PACKAGES_PREFIX, SettingsScope.Project);
 
                 //styles
                 validStyle = new GUIStyle(EditorStyles.label);
@@ -127,11 +125,6 @@ namespace MachinMachines
                     if (EditorGUI.EndChangeCheck())
                     {
                         MinusSettings.instance.Set<string>(SETTINGS_PRIMARY_PROJECT_PATH, primaryProjectPath, SettingsScope.User);
-                    }
-                    localPackagesPrefix = EditorGUILayout.TextField("Asset Packages Prefix", localPackagesPrefix);
-                    if (EditorGUI.EndChangeCheck())
-                    {
-                        MinusSettings.instance.Set<string>(SETTINGS_ASSETS_PACKAGES_PREFIX, localPackagesPrefix, SettingsScope.Project);
                     }
                 }
                 EditorGUILayout.EndVertical();
@@ -169,22 +162,8 @@ namespace MachinMachines
                     {
                         if (primaryPackageList != null && primaryPackageList.Count > 0)
                         {
-                            DisplayPackages(primaryPackageList.Where(t => !t.isAsset), ref scrollPosPackages);
-                        }
-                        else
-                        {
-                            EditorGUILayout.LabelField("please synchronize first.");
-                        }
-                    }
-                    EditorGUILayout.EndVertical();
-
-                    EditorGUILayout.BeginVertical("box");
-                    showAssetPackages = EditorGUILayout.Foldout(showAssetPackages, "ASSET PACKAGES", EditorStyles.foldoutHeader);
-                    if (showAssetPackages)
-                    {
-                        if (primaryPackageList != null && primaryPackageList.Count > 0)
-                        {
-                            DisplayPackages(primaryPackageList.Where(t => t.isAsset), ref scrollPosAssetPackages);
+                            //DisplayPackages(primaryPackageList.Where(t => !t.isAsset), ref scrollPosPackages);
+                            DisplayPackages(primaryPackageList, ref scrollPosPackages);
                         }
                         else
                         {
@@ -208,8 +187,8 @@ namespace MachinMachines
             private void Synchronize() 
             {
                 //SynchronizeLocalPackages();
-                primaryPackageList = Synchronization.GetExternalPackagesList(PrimaryPackagesDirectory, localPackagesPrefix);
-                thisPackageList = Synchronization.GetExternalPackagesList(ThisPackagesDirectory, localPackagesPrefix);
+                primaryPackageList = Synchronization.GetExternalPackagesList(PrimaryPackagesDirectory);
+                thisPackageList = Synchronization.GetExternalPackagesList(ThisPackagesDirectory);
                 primaryProjectSettingFiles = Synchronization.GetHashedFilesOfDirectory(PrimarySettingsDirectory);
                 thisProjectSettingFiles = Synchronization.GetHashedFilesOfDirectory(ThisSettingsDirectory);
             }
