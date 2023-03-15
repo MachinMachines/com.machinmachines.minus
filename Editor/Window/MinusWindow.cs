@@ -52,8 +52,6 @@ namespace MachinMachines
             private GUIStyle missingStyle;
             private bool showPackages;
             private Vector2 scrollPosPackages;
-            private bool showAssetPackages;
-            private Vector2 scrollPosAssetPackages;
             private bool showProjectSettings;
             private Vector2 scrollPosProjectSettings;
 
@@ -162,7 +160,6 @@ namespace MachinMachines
                     {
                         if (primaryPackageList != null && primaryPackageList.Count > 0)
                         {
-                            //DisplayPackages(primaryPackageList.Where(t => !t.isAsset), ref scrollPosPackages);
                             DisplayPackages(primaryPackageList, ref scrollPosPackages);
                         }
                         else
