@@ -15,6 +15,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 
@@ -24,6 +25,9 @@ namespace MachinMachines
     {
         public static class Synchronization
         {
+
+            internal static readonly string STR_MISSING_PACKAGE = "none";
+
             /*
              * Returns a dictionnary of <string,string> :
              * key : each file contained in _directory
@@ -84,6 +88,57 @@ namespace MachinMachines
                 }
 
                 return packageList;
+            }
+
+            internal static string FindPackageVersion(List<PackageManifestItem> thisProjectFiles, string _packageName)
+            {
+                PackageManifestItem tpmPackage = thisProjectFiles.FirstOrDefault(t => t.packageName == _packageName);
+
+                return tpmPackage != null ? tpmPackage.packageVersion : STR_MISSING_PACKAGE;
+            }
+
+            public static string LogCompareFilesInfo(List<PackageManifestItem> primaryProjectFiles, List<PackageManifestItem> localProjectFiles, bool isVerbose = false)
+            {
+                List<PackageManifestItem> validPackages = new();
+                List<PackageManifestItem> missingPackages = new();
+                Dictionary<PackageManifestItem, string> invalidPackages = new();
+
+                foreach (PackageManifestItem pmi in primaryProjectFiles)
+                {
+                    string localPackageVersion = FindPackageVersion(localProjectFiles, pmi.packageName);
+                    if (localPackageVersion.Equals(pmi.packageVersion))
+                    {
+                        validPackages.Add(pmi);
+                    }
+                    else if (localPackageVersion.Equals(Synchronization.STR_MISSING_PACKAGE))
+                    {
+                        missingPackages.Add(pmi);
+                    }
+                    else invalidPackages.Add(pmi, localPackageVersion);
+                }
+
+                string logText = "";
+
+                if (invalidPackages.Count == 0) logText += "=== OK ===";
+                else logText += "=== INVALID ===";
+
+                foreach (KeyValuePair<PackageManifestItem, string> invalidValue in invalidPackages)
+                {
+                    logText += "\n Invalid Package : " + invalidValue.Key.packageName + " / local version : " + invalidValue.Value + " - primary version : " + invalidValue.Key.packageVersion;
+                }
+                if (isVerbose)
+                {
+                    foreach (PackageManifestItem validPMI in validPackages)
+                    {
+                        logText += "\n Valid Package " + validPMI.packageName + " / version : " + validPMI.packageVersion;
+                    }
+                    foreach (PackageManifestItem missingPMI in missingPackages)
+                    {
+                        logText += "\n Missing Package : " + missingPMI.packageName + " / primary version : " + missingPMI.packageVersion; ;
+                    }
+                }
+
+                return logText;
             }
         }
     }

@@ -32,8 +32,6 @@ namespace MachinMachines
 
             private static readonly int WIDTH_CASE_PROJECT_SETTINGS = 100;            
 
-            private static readonly string STR_MISSING_PACKAGE = "none";
-
             private static readonly string STR_NAME_PACKAGES_COLUMN = "Package Name";
             private static readonly string STR_PRIMARY_PACKAGES_COLUMN = "Primary Project";
             private static readonly string STR_THIS_PACKAGES_COLUMN = "This Project";
@@ -130,7 +128,6 @@ namespace MachinMachines
                 //GROUP 2 : BUTTONS
                 if (GUILayout.Button("Synchronize"))
                 {
-                    //SynchronizeLocalPackages();
                     if (!Directory.Exists(PrimaryPackagesDirectory))
                     {
                         EditorUtility.DisplayDialog("Minus Error", "Directory not found : " + PrimaryPackagesDirectory, "ok");
@@ -158,7 +155,7 @@ namespace MachinMachines
                     showPackages = EditorGUILayout.Foldout(showPackages, "PACKAGES", EditorStyles.foldoutHeader);
                     if (showPackages)
                     {
-                        if (primaryPackageList != null && primaryPackageList.Count > 0)
+                        if (primaryPackageList != null && primaryPackageList.Count > 0 && primaryPackageList[0].packageName != null)
                         {
                             DisplayPackages(primaryPackageList, ref scrollPosPackages);
                         }
@@ -178,6 +175,18 @@ namespace MachinMachines
                         DisplayProjectSettings();
                     }
                     EditorGUILayout.EndVertical();
+
+                    if (GUILayout.Button("Log Comparaison"))
+                    {
+                        if (primaryPackageList != null && primaryPackageList.Count > 0 && primaryPackageList[0].packageName != null)
+                        {
+                            Debug.Log(Synchronization.LogCompareFilesInfo(primaryPackageList, thisPackageList, true));
+                        }
+                        else
+                        {
+                            EditorUtility.DisplayDialog("Minus Error", "Please synchronize first.", "ok");
+                        }
+                    }
                 }
             }
 
@@ -209,12 +218,13 @@ namespace MachinMachines
                     _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos);
                     foreach (PackageManifestItem package in _primaryList)
                     {
-                        string localPackageVersion = FindPackageVersionInThis(package.packageName);
+                        //string localPackageVersion = FindPackageVersionInThis(package.packageName);
+                        string localPackageVersion = Synchronization.FindPackageVersion(thisPackageList, package.packageName);
                         bool isVersionMissing = false;
                         bool isVersionValid = localPackageVersion.Equals(package.packageVersion);
                         if (!isVersionValid)
                         {
-                            isVersionMissing = localPackageVersion.Equals(STR_MISSING_PACKAGE);
+                            isVersionMissing = localPackageVersion.Equals(Synchronization.STR_MISSING_PACKAGE);
                         }
 
                         EditorGUILayout.BeginHorizontal();
@@ -257,7 +267,7 @@ namespace MachinMachines
             {
                 PackageManifestItem tpmPackage = thisPackageList.FirstOrDefault(t => t.packageName == _packageName);
 
-                return tpmPackage != null ? tpmPackage.packageVersion : STR_MISSING_PACKAGE;
+                return tpmPackage != null ? tpmPackage.packageVersion : Synchronization.STR_MISSING_PACKAGE;
             }
 
             private void SynchronizeLocalPackages()
@@ -318,9 +328,7 @@ namespace MachinMachines
                 }
             }
 
-            private string FindLocalProjectSettingFile
-
-                (string _fileName)
+            private string FindLocalProjectSettingFile (string _fileName)
             {
                 foreach (KeyValuePair<string, string> kvp in thisProjectSettingFiles)
                 {
