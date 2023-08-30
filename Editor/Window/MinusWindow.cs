@@ -176,7 +176,9 @@ namespace MachinMachines
                     }
                     EditorGUILayout.EndVertical();
 
-                    if (GUILayout.Button("Log Comparaison"))
+                    EditorGUILayout.BeginHorizontal();
+
+                    if (GUILayout.Button("Log Comparaison - Packages"))
                     {
                         if (primaryPackageList != null && primaryPackageList.Count > 0 && primaryPackageList[0].packageName != null)
                         {
@@ -187,6 +189,21 @@ namespace MachinMachines
                             EditorUtility.DisplayDialog("Minus Error", "Please synchronize first.", "ok");
                         }
                     }
+
+
+                    if (GUILayout.Button("Log Comparaison - Project Settings"))
+                    {
+                        if (primaryProjectSettingFiles != null && primaryProjectSettingFiles.Count > 0)
+                        {
+                            Debug.Log(Synchronization.LogCompareFilesInfo(primaryProjectSettingFiles, thisProjectSettingFiles, true));
+                        }
+                        else
+                        {
+                            EditorUtility.DisplayDialog("Minus Error", "Please synchronize first.", "ok");
+                        }
+                    }
+
+                    EditorGUILayout.EndHorizontal();
                 }
             }
 
@@ -263,18 +280,6 @@ namespace MachinMachines
                 }
             }
 
-            private string FindPackageVersionInThis(string _packageName)
-            {
-                PackageManifestItem tpmPackage = thisPackageList.FirstOrDefault(t => t.packageName == _packageName);
-
-                return tpmPackage != null ? tpmPackage.packageVersion : Synchronization.STR_MISSING_PACKAGE;
-            }
-
-            private void SynchronizeLocalPackages()
-            {
-                PackagingOperations.SynchronizeLocalPackages(SynchroGetResponse);
-            }
-
             private void SynchroGetResponse(List<PackageManifestItem> response)
             {
                 thisPackageList = response;
@@ -302,7 +307,7 @@ namespace MachinMachines
                         EditorGUILayout.LabelField(kvp.Key, GUILayout.Width(WIDTH_CASE_PACKAGE_NAME));
                         //EditorGUILayout.LabelField(kvp.Value);
 
-                        string checksumFromThis = FindLocalProjectSettingFile(kvp.Key);
+                        string checksumFromThis = Synchronization.FindProjectSettingFile(thisProjectSettingFiles, kvp.Key);
                         bool isChecksumValid = kvp.Value.Equals(checksumFromThis);
                         EditorGUILayout.LabelField(isChecksumValid ? "Up to date" : "Outdated", isChecksumValid ? validStyle : wrongStyle, GUILayout.Width(WIDTH_CASE_PROJECT_SETTINGS));
 
@@ -326,18 +331,6 @@ namespace MachinMachines
                 {
                     EditorGUILayout.LabelField("please synchronize first.");
                 }
-            }
-
-            private string FindLocalProjectSettingFile (string _fileName)
-            {
-                foreach (KeyValuePair<string, string> kvp in thisProjectSettingFiles)
-                {
-                    if (_fileName.Equals(kvp.Key))
-                    {
-                        return kvp.Value;
-                    }
-                }
-                return "None";
             }
 
             private void UpdateSettingFile(string filename)

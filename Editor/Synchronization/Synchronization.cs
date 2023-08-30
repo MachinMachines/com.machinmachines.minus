@@ -97,6 +97,19 @@ namespace MachinMachines
                 return tpmPackage != null ? tpmPackage.packageVersion : STR_MISSING_PACKAGE;
             }
 
+            internal static string FindProjectSettingFile(Dictionary<string, string> thisProjectFiles,  string _fileName)
+            {
+                foreach (KeyValuePair<string, string> kvp in thisProjectFiles)
+                {
+                    if (_fileName.Equals(kvp.Key))
+                    {
+                        return kvp.Value;
+                    }
+                }
+                return "None";
+            }
+
+
             public static string LogCompareFilesInfo(List<PackageManifestItem> primaryProjectFiles, List<PackageManifestItem> localProjectFiles, bool isVerbose = false)
             {
                 List<PackageManifestItem> validPackages = new();
@@ -135,6 +148,41 @@ namespace MachinMachines
                     foreach (PackageManifestItem missingPMI in missingPackages)
                     {
                         logText += "\n Missing Package : " + missingPMI.packageName + " / primary version : " + missingPMI.packageVersion; ;
+                    }
+                }
+
+                return logText;
+            }
+
+            public static string LogCompareFilesInfo(Dictionary<string,string> primaryProjectFiles, Dictionary<string, string> localProjectFiles, bool isVerbose = false)
+            {
+                List<string> validSettings = new();
+                List<string> invalidSettings = new();
+
+                foreach (KeyValuePair<string, string> kvp in primaryProjectFiles)
+                {
+                    string checksumFromThis = FindProjectSettingFile(localProjectFiles, kvp.Key);
+                    if (kvp.Value.Equals(checksumFromThis))
+                    {
+                        validSettings.Add(kvp.Key);
+                    }
+                    else invalidSettings.Add(kvp.Key);
+                }
+
+                string logText = "";
+
+                if (validSettings.Count == 0) logText += "=== OK ===";
+                else logText += "=== INVALID ===";
+
+                foreach (string invalidValue in invalidSettings)
+                {
+                    logText += "\n Invalid Settings : " + invalidValue;
+                }
+                if (isVerbose)
+                {
+                    foreach (string validSetting in validSettings)
+                    {
+                        logText += "\n Valid Settings : " + validSetting;
                     }
                 }
 
