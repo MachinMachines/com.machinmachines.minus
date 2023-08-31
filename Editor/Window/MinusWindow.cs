@@ -54,32 +54,10 @@ namespace MachinMachines
             private Vector2 scrollPosProjectSettings;
 
             /* settings */ 
-            public static readonly string SETTINGS_PRIMARY_PROJECT_PATH = "primaryProjectPath";
             public static readonly string SETTINGS_ASSETS_PACKAGES_PREFIX = "assetPackagePrefix";
             private string primaryProjectPath;
 
             private bool isNeededRefreshAfterSync = false;
-
-            /* Getters */
-            public string PrimaryPackagesDirectory
-            {
-                get { return primaryProjectPath + "/Packages"; }
-            }
-
-            public string PrimarySettingsDirectory
-            {
-                get { return primaryProjectPath + "/ProjectSettings"; }
-            }
-
-            public string ThisPackagesDirectory
-            {
-                get { return Directory.GetCurrentDirectory() + "/Packages"; }
-            }
-
-            public string ThisSettingsDirectory
-            {
-                get { return Directory.GetCurrentDirectory() + "/ProjectSettings"; }
-            }
 
             /*
              * INITIALIZATION
@@ -98,7 +76,7 @@ namespace MachinMachines
 
             private void Init()
             {
-                primaryProjectPath = MinusSettings.instance.Get<string>(SETTINGS_PRIMARY_PROJECT_PATH, SettingsScope.User);
+                primaryProjectPath = MinusSettings.instance.Get<string>(Synchronization.SETTINGS_PRIMARY_PROJECT_PATH, SettingsScope.User);
 
                 //styles
                 validStyle = new GUIStyle(EditorStyles.label);
@@ -120,7 +98,7 @@ namespace MachinMachines
                     primaryProjectPath = EditorGUILayout.TextField("Primary Project Path", primaryProjectPath);
                     if (EditorGUI.EndChangeCheck())
                     {
-                        MinusSettings.instance.Set<string>(SETTINGS_PRIMARY_PROJECT_PATH, primaryProjectPath, SettingsScope.User);
+                        MinusSettings.instance.Set<string>(Synchronization.SETTINGS_PRIMARY_PROJECT_PATH, primaryProjectPath, SettingsScope.User);
                     }
                 }
                 EditorGUILayout.EndVertical();
@@ -128,9 +106,9 @@ namespace MachinMachines
                 //GROUP 2 : BUTTONS
                 if (GUILayout.Button("Synchronize"))
                 {
-                    if (!Directory.Exists(PrimaryPackagesDirectory))
+                    if (!Directory.Exists(Synchronization.PrimaryPackagesDirectory))
                     {
-                        EditorUtility.DisplayDialog("Minus Error", "Directory not found : " + PrimaryPackagesDirectory, "ok");
+                        EditorUtility.DisplayDialog("Minus Error", "Directory not found : " + Synchronization.PrimaryPackagesDirectory, "ok");
                     }
                     else
                     {
@@ -210,10 +188,10 @@ namespace MachinMachines
             private void Synchronize() 
             {
                 //SynchronizeLocalPackages();
-                primaryPackageList = Synchronization.GetExternalPackagesList(PrimaryPackagesDirectory);
-                thisPackageList = Synchronization.GetExternalPackagesList(ThisPackagesDirectory);
-                primaryProjectSettingFiles = Synchronization.GetHashedFilesOfDirectory(PrimarySettingsDirectory);
-                thisProjectSettingFiles = Synchronization.GetHashedFilesOfDirectory(ThisSettingsDirectory);
+                primaryPackageList = Synchronization.GetExternalPackagesList(Synchronization.PrimaryPackagesDirectory);
+                thisPackageList = Synchronization.GetExternalPackagesList(Synchronization.ThisPackagesDirectory);
+                primaryProjectSettingFiles = Synchronization.GetHashedFilesOfDirectory(Synchronization.PrimarySettingsDirectory);
+                thisProjectSettingFiles = Synchronization.GetHashedFilesOfDirectory(Synchronization.ThisSettingsDirectory);
             }
             /**
              *  PACKAGE MANAGEMENT
@@ -241,7 +219,7 @@ namespace MachinMachines
                         bool isVersionValid = localPackageVersion.Equals(package.packageVersion);
                         if (!isVersionValid)
                         {
-                            isVersionMissing = localPackageVersion.Equals(Synchronization.STR_MISSING_PACKAGE);
+                            isVersionMissing = localPackageVersion.Equals(Synchronization.STR_MISSING_PCK_OR_PJS);
                         }
 
                         EditorGUILayout.BeginHorizontal();
@@ -337,7 +315,7 @@ namespace MachinMachines
             {
                 if (EditorUtility.DisplayDialog("Warning", "Do you really want to update the file " + filename + " ? ", "Yes", "No"))
                 {
-                    FileUtil.ReplaceFile(PrimarySettingsDirectory + "/" + filename, ThisSettingsDirectory + "/" + filename);
+                    FileUtil.ReplaceFile(Synchronization.PrimarySettingsDirectory + "/" + filename, Synchronization.ThisSettingsDirectory + "/" + filename);
 
                     if (EditorUtility.DisplayDialog("info", "File copied. You need to restart the Unity Project to apply changes.", "Restart Editor", "Not yet"))
                     {

@@ -45,7 +45,6 @@ namespace MachinMachines
             private int currentStep = -1;
 
             private bool tmpAllowPackages;
-            private bool posGroupEnabled;
             private string tmpPrimaryPath;
             private List<PackageManifestItem> tmpPackagesToClone;
             private string foldersToCopy;
@@ -361,15 +360,15 @@ namespace MachinMachines
 
             private void SetupMinusSettings()
             {
-                tmpPrimaryPath = MinusSettings.instance.Get<string>(MinusWindow.SETTINGS_PRIMARY_PROJECT_PATH, SettingsScope.Project);
-                MinusSettings.instance.Set<string>(MinusWindow.SETTINGS_PRIMARY_PROJECT_PATH, Directory.GetCurrentDirectory(), SettingsScope.Project);
+                tmpPrimaryPath = MinusSettings.instance.Get<string>(Synchronization.SETTINGS_PRIMARY_PROJECT_PATH, SettingsScope.Project);
+                MinusSettings.instance.Set<string>(Synchronization.SETTINGS_PRIMARY_PROJECT_PATH, Directory.GetCurrentDirectory(), SettingsScope.Project);
 
                 CallNextStep();
             }
 
             private void RestoreMinusSettings()
             {
-                MinusSettings.instance.Set<string>(MinusWindow.SETTINGS_PRIMARY_PROJECT_PATH, tmpPrimaryPath, SettingsScope.Project);
+                MinusSettings.instance.Set<string>(Synchronization.SETTINGS_PRIMARY_PROJECT_PATH, tmpPrimaryPath, SettingsScope.Project);
 
                 CallNextStep();
             }
