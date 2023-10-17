@@ -14,7 +14,7 @@
 
 using UnityEngine;
 
-namespace MachinMachines
+namespace StudioManette
 {
     namespace Minus
     {

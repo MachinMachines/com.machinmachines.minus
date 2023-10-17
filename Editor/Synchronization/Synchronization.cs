@@ -20,7 +20,7 @@ using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using UnityEditor;
 
-namespace MachinMachines
+namespace StudioManette
 {
     namespace Minus
     {

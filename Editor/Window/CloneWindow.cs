@@ -20,7 +20,7 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
-namespace MachinMachines
+namespace StudioManette
 {
     namespace Minus
     {
@@ -58,7 +58,7 @@ namespace MachinMachines
 
 
 
-            [MenuItem("MachinMachines/Minus/Create New Project...")]
+            [MenuItem("Studio Manette/Minus/Create New Project...")]
             public static void ShowWindow()
             {
                instance = (CloneWindow)EditorWindow.GetWindow(typeof(CloneWindow), false, "Minus - Clone Window");

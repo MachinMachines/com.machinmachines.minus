@@ -14,7 +14,7 @@
 
 using UnityEditor.SettingsManagement;
 
-namespace MachinMachines
+namespace StudioManette
 {
     namespace Minus
     {
